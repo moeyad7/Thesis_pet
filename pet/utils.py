@@ -177,14 +177,18 @@ class DictDataset(Dataset):
 
     def __init__(self, **tensors):
         tensors.values()
-
+        
+        # Check that all tensors have the same size along the first dimension (number of data points)
         assert all(next(iter(tensors.values())).size(0) == tensor.size(0) for tensor in tensors.values())
+        # Store the tensors as attributes in the dataset
         self.tensors = tensors
 
     def __getitem__(self, index):
+        # Retrieve a single data point by index
         return {key: tensor[index] for key, tensor in self.tensors.items()}
 
     def __len__(self):
+        # Get the length of the dataset (number of data points)
         return next(iter(self.tensors.values())).size(0)
 
 
@@ -326,10 +330,12 @@ def exact_match(predictions: np.ndarray, actuals: np.ndarray, question_ids: np.n
     for qid, val in q_predictions:
         predictions_per_question[qid].append(val)
 
-    em = 0
+    em = 0 # exact match
+    # for each question, check if the prediction is correct
     for qid in unique_questions:
         if actuals_per_question[qid] == predictions_per_question[qid]:
             em += 1
+    # average over all questions
     em /= len(unique_questions)
 
     return em

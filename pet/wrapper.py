@@ -46,12 +46,14 @@ PLM_WRAPPER = "plm"
 
 WRAPPER_TYPES = [SEQUENCE_CLASSIFIER_WRAPPER, MLM_WRAPPER, PLM_WRAPPER]
 
+# Dictionary mapping model wrappers to their corresponding preprocessor classes
 PREPROCESSORS = {
     SEQUENCE_CLASSIFIER_WRAPPER: preprocessor.SequenceClassifierPreprocessor,
     MLM_WRAPPER: preprocessor.MLMPreprocessor,
     PLM_WRAPPER: preprocessor.PLMPreprocessor,
 }
 
+# Dictionary containing model classes for various model architectures
 MODEL_CLASSES = {
     'bert': {
         'config': BertConfig,
@@ -90,12 +92,14 @@ MODEL_CLASSES = {
     },
 }
 
+# Dictionary mapping model wrappers to evaluation step functions
 EVALUATION_STEP_FUNCTIONS = {
     MLM_WRAPPER: lambda wrapper: wrapper.mlm_eval_step,
     PLM_WRAPPER: lambda wrapper: wrapper.plm_eval_step,
     SEQUENCE_CLASSIFIER_WRAPPER: lambda wrapper: wrapper.sequence_classifier_eval_step,
 }
 
+# Dictionary mapping model wrappers to training step functions
 TRAIN_STEP_FUNCTIONS = {
     MLM_WRAPPER: lambda wrapper: wrapper.mlm_train_step,
     PLM_WRAPPER: lambda wrapper: wrapper.plm_train_step,
@@ -142,6 +146,7 @@ class TransformerModelWrapper:
         tokenizer_class = MODEL_CLASSES[self.config.model_type]['tokenizer']
         model_class = MODEL_CLASSES[self.config.model_type][self.config.wrapper_type]
 
+        # Load pretrained model and tokenizer
         model_config = config_class.from_pretrained(
             config.model_name_or_path, num_labels=len(config.label_list), finetuning_task=config.task_name,
             cache_dir=config.cache_dir if config.cache_dir else None, use_cache=False)
@@ -149,7 +154,8 @@ class TransformerModelWrapper:
         self.tokenizer = tokenizer_class.from_pretrained(
             config.model_name_or_path,
             cache_dir=config.cache_dir if config.cache_dir else None)  # type: PreTrainedTokenizer
-
+        
+        # if the model is a gpt2 model, we need to change the padding and mask tokens
         if self.config.model_type == 'gpt2':
             self.tokenizer.pad_token, self.tokenizer.mask_token = self.tokenizer.eos_token, self.tokenizer.eos_token
 
@@ -160,6 +166,7 @@ class TransformerModelWrapper:
         if n_gpus >1:
             self.model = torch.nn.DataParallel(self.model)
         
+        # load the preprocessor and task helper
         self.preprocessor = PREPROCESSORS[self.config.wrapper_type](self, self.config.task_name, self.config.pattern_id,
                                                                     self.config.verbalizer_file)
         self.task_helper = TASK_HELPERS[self.config.task_name](self) if self.config.task_name in TASK_HELPERS else None
@@ -167,14 +174,21 @@ class TransformerModelWrapper:
     @classmethod
     def from_pretrained(cls, path: str) -> 'TransformerModelWrapper':
         """Load a pretrained wrapper from a given path."""
+        # create a new wrapper instance
         wrapper = TransformerModelWrapper.__new__(TransformerModelWrapper)
+        # load the config
         wrapper.config = wrapper._load_config(path)
+        
+        # load the model and tokenizer
         tokenizer_class = MODEL_CLASSES[wrapper.config.model_type]['tokenizer']
         model_class = MODEL_CLASSES[wrapper.config.model_type][wrapper.config.wrapper_type]
         wrapper.model = model_class.from_pretrained(path)
         wrapper.tokenizer = tokenizer_class.from_pretrained(path)
+        
+        # load the preprocessor and task helper
         wrapper.preprocessor = PREPROCESSORS[wrapper.config.wrapper_type](
             wrapper, wrapper.config.task_name, wrapper.config.pattern_id, wrapper.config.verbalizer_file)
+        
         wrapper.task_helper = TASK_HELPERS[wrapper.config.task_name](wrapper) \
             if wrapper.config.task_name in TASK_HELPERS else None
         return wrapper

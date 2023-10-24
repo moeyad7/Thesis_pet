@@ -64,7 +64,7 @@ class LimitedExampleList:
             self._max_examples = {label: max_examples for label in self._labels}
 
     def is_full(self):
-        """Return `true` iff no more examples can be added to this list"""
+        """Return `true` if no more examples can be added to this list"""
         for label in self._labels:
             if self._examples_per_label[label] < self._max_examples[label] or self._max_examples[label] < 0:
                 return False
@@ -761,7 +761,7 @@ class RecordProcessor(DataProcessor):
                     f"distribution {list(label_distribution.items())}")
         return examples
 
-
+# Dictionary mapping task names to their corresponding DataProcessor classes
 PROCESSORS = {
     "mnli": MnliProcessor,
     "mnli-mm": MnliMismatchedProcessor,
@@ -784,6 +784,7 @@ PROCESSORS = {
     "ax-b": AxBProcessor,
 }  # type: Dict[str,Callable[[],DataProcessor]]
 
+# Dictionary mapping task names to their corresponding task helper classes
 TASK_HELPERS = {
     "wsc": task_helpers.WscTaskHelper,
     "multirc": task_helpers.MultiRcTaskHelper,
@@ -791,8 +792,9 @@ TASK_HELPERS = {
     "record": task_helpers.RecordTaskHelper,
 }
 
+# Dictionary mapping task names to the list of evaluation metrics used for each task
 METRICS = {
-    "cb": ["acc", "f1-macro"],
+    "cb": ["acc", "f1-macro"],    
     "multirc": ["acc", "f1", "em"]
 }
 
@@ -821,7 +823,7 @@ def load_examples(task, data_dir: str, set_type: str, *_, num_examples: int = No
     logger.info(
         f"Creating features from dataset file at {data_dir} ({ex_str}, set_type={set_type})"
     )
-
+    # Load data features from dataset file
     if set_type == DEV_SET:
         examples = processor.get_dev_examples(data_dir)
     elif set_type == TEST_SET:
@@ -836,14 +838,17 @@ def load_examples(task, data_dir: str, set_type: str, *_, num_examples: int = No
         raise ValueError(f"'set_type' must be one of {SET_TYPES}, got '{set_type}' instead")
 
     if num_examples is not None:
+        # Shuffles and restricts the number of examples in a list to a maximum size.
         examples = _shuffle_and_restrict(examples, num_examples, seed)
 
     elif num_examples_per_label is not None:
+        # Restricts the number of examples per label in a list to a maximum size.
         limited_examples = LimitedExampleList(processor.get_labels(), num_examples_per_label)
         for example in examples:
             limited_examples.add(example)
         examples = limited_examples.to_list()
 
+    # Counter counts the number of occurrences of each label
     label_distribution = Counter(example.label for example in examples)
     logger.info(f"Returning {len(examples)} {set_type} examples with label dist.: {list(label_distribution.items())}")
 

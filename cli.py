@@ -38,7 +38,7 @@ def load_pet_configs(args) -> Tuple[WrapperConfig, pet.TrainConfig, pet.EvalConf
                               wrapper_type=args.wrapper_type, task_name=args.task_name, label_list=args.label_list,
                               max_seq_length=args.pet_max_seq_length, verbalizer_file=args.verbalizer_file,
                               cache_dir=args.cache_dir)
-
+    
     train_cfg = pet.TrainConfig(device=args.device, per_gpu_train_batch_size=args.pet_per_gpu_train_batch_size,
                                 per_gpu_unlabeled_batch_size=args.pet_per_gpu_unlabeled_batch_size, n_gpu=args.n_gpu,
                                 num_train_epochs=args.pet_num_train_epochs, max_steps=args.pet_max_steps,
@@ -215,8 +215,9 @@ def main():
                         help="Whether to perform evaluation on the dev set or the test set")
 
     args = parser.parse_args()
-    logger.info("Parameters: {}".format(args))
+    logger.info("Parameters: {}".format(args)) # log all of the command line arguments
 
+    # if the output directory already exists and is not empty, raise an error
     if os.path.exists(args.output_dir) and os.listdir(args.output_dir) \
             and args.do_train and not args.overwrite_output_dir:
         raise ValueError("Output directory ({}) already exists and is not empty.".format(args.output_dir))
@@ -227,20 +228,21 @@ def main():
 
     # Prepare task
     args.task_name = args.task_name.lower()
-    if args.task_name not in PROCESSORS:
+    if args.task_name not in PROCESSORS: # Check if the task is supported
         raise ValueError("Task '{}' not found".format(args.task_name))
     processor = PROCESSORS[args.task_name]()
-    args.label_list = processor.get_labels()
+    args.label_list = processor.get_labels() # Get the list of labels for this task
 
     train_ex_per_label, test_ex_per_label = None, None
-    train_ex, test_ex = args.train_examples, args.test_examples
-    if args.split_examples_evenly:
+    train_ex, test_ex = args.train_examples, args.test_examples # Number of train/test examples to use
+    if args.split_examples_evenly: 
         train_ex_per_label = eq_div(args.train_examples, len(args.label_list)) if args.train_examples != -1 else -1
         test_ex_per_label = eq_div(args.test_examples, len(args.label_list)) if args.test_examples != -1 else -1
         train_ex, test_ex = None, None
 
     eval_set = TEST_SET if args.eval_set == 'test' else DEV_SET
 
+    # Load train, eval and unlabeled data
     train_data = load_examples(
         args.task_name, args.data_dir, TRAIN_SET, num_examples=train_ex, num_examples_per_label=train_ex_per_label)
     eval_data = load_examples(
@@ -248,12 +250,15 @@ def main():
     unlabeled_data = load_examples(
         args.task_name, args.data_dir, UNLABELED_SET, num_examples=args.unlabeled_examples)
 
+    # Get the evaluation metrics for this task
     args.metrics = METRICS.get(args.task_name, DEFAULT_METRICS)
 
+    # Load configs for PET/iPET and the final sequence classifier
     pet_model_cfg, pet_train_cfg, pet_eval_cfg = load_pet_configs(args)
     sc_model_cfg, sc_train_cfg, sc_eval_cfg = load_sequence_classifier_configs(args)
     ipet_cfg = load_ipet_config(args)
 
+    # Train and evaluate the model
     if args.method == 'pet':
         pet.train_pet(pet_model_cfg, pet_train_cfg, pet_eval_cfg, sc_model_cfg, sc_train_cfg, sc_eval_cfg,
                       pattern_ids=args.pattern_ids, output_dir=args.output_dir,

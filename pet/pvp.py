@@ -49,13 +49,16 @@ class PVP(ABC):
         :param verbalizer_file: an optional file that contains the verbalizer to be used
         :param seed: a seed to be used for generating random numbers if necessary
         """
+        # Initialize class attributes
         self.wrapper = wrapper
         self.pattern_id = pattern_id
         self.rng = random.Random(seed)
 
+        # Load verbalizer from file if provided
         if verbalizer_file:
             self.verbalize = PVP._load_verbalizer_from_file(verbalizer_file, self.pattern_id)
 
+        # Check if MultiMask is needed and build MLM to CLS logits tensor
         use_multimask = (self.wrapper.config.task_name in TASK_HELPERS) and (
             issubclass(TASK_HELPERS[self.wrapper.config.task_name], MultiMaskTaskHelper)
         )
@@ -63,15 +66,28 @@ class PVP(ABC):
             self.mlm_logits_to_cls_logits_tensor = self._build_mlm_logits_to_cls_logits_tensor()
 
     def _build_mlm_logits_to_cls_logits_tensor(self):
+        # Create a tensor for mapping MLM (Masked Language Modeling) logits to CLS (Classification) logits
         label_list = self.wrapper.config.label_list
+
+        # Initialize a tensor with dimensions for labels and verbalizers
         m2c_tensor = torch.ones([len(label_list), self.max_num_verbalizers], dtype=torch.long) * -1
 
+        # Iterate through each label
         for label_idx, label in enumerate(label_list):
+            # Obtain the corresponding verbalizers for the label
             verbalizers = self.verbalize(label)
+
+            # Iterate through each verbalizer for the label
             for verbalizer_idx, verbalizer in enumerate(verbalizers):
+                # Get the ID associated with the verbalizer using the tokenizer
                 verbalizer_id = get_verbalization_ids(verbalizer, self.wrapper.tokenizer, force_single_token=True)
-                assert verbalizer_id != self.wrapper.tokenizer.unk_token_id, "verbalization was tokenized as <UNK>"
+
+                # Ensure that the verbalization is not tokenized as unknown ("<UNK>")
+                assert verbalizer_id != self.wrapper.tokenizer.unk_token_id, "Verbalization was tokenized as <UNK>"
+
+                # Update the mapping tensor with the verbalizer ID
                 m2c_tensor[label_idx, verbalizer_idx] = verbalizer_id
+
         return m2c_tensor
 
     @property
@@ -118,32 +134,40 @@ class PVP(ABC):
         :param labeled: if ``priming=True``, whether the label should be appended to this example
         :return: A tuple, consisting of a list of input ids and a list of token type ids
         """
-
+        # Check if priming and labeled settings are compatible
         if not priming:
             assert not labeled, "'labeled' can only be set to true if 'priming' is also set to true"
 
+        # Get the tokenizer and parts from the input example
         tokenizer = self.wrapper.tokenizer  # type: PreTrainedTokenizer
         parts_a, parts_b = self.get_parts(example)
 
+        # Configure kwargs for tokenizer based on the tokenizer type
         kwargs = {'add_prefix_space': True} if isinstance(tokenizer, GPT2Tokenizer) else {}
 
+        # Process and tokenize parts_a
         parts_a = [x if isinstance(x, tuple) else (x, False) for x in parts_a]
         parts_a = [(tokenizer.encode(x, add_special_tokens=False, **kwargs), s) for x, s in parts_a if x]
 
+        # If parts_b exists, process and tokenize it
         if parts_b:
             parts_b = [x if isinstance(x, tuple) else (x, False) for x in parts_b]
             parts_b = [(tokenizer.encode(x, add_special_tokens=False, **kwargs), s) for x, s in parts_b if x]
 
+        # Truncate the tokenized parts to fit the maximum sequence length
         self.truncate(parts_a, parts_b, max_length=self.wrapper.config.max_seq_length)
 
+        # Extract tokens from tokenized parts
         tokens_a = [token_id for part, _ in parts_a for token_id in part]
         tokens_b = [token_id for part, _ in parts_b for token_id in part] if parts_b else None
 
+        # If priming is enabled
         if priming:
             input_ids = tokens_a
             if tokens_b:
                 input_ids += tokens_b
             if labeled:
+                # Find and replace a mask token with the verbalizer ID
                 mask_idx = input_ids.index(self.mask_id)
                 assert mask_idx >= 0, 'sequence of input_ids must contain a mask token'
                 assert len(self.verbalize(example.label)) == 1, 'priming only supports one verbalization per label'
@@ -152,6 +176,7 @@ class PVP(ABC):
                 input_ids[mask_idx] = verbalizer_id
             return input_ids, []
 
+        # If priming is not enabled
         input_ids = tokenizer.build_inputs_with_special_tokens(tokens_a, tokens_b)
         token_type_ids = tokenizer.create_token_type_ids_from_sequences(tokens_a, tokens_b)
 
@@ -210,34 +235,72 @@ class PVP(ABC):
         return labels
 
     def convert_mlm_logits_to_cls_logits(self, mlm_labels: torch.Tensor, logits: torch.Tensor) -> torch.Tensor:
+        """
+        Convert MLM (Masked Language Modeling) logits to CLS (Classification) logits.
+
+        :param mlm_labels: Tensor containing MLM labels, where labels for non-masked tokens are non-negative integers
+        :param logits: Tensor containing the original MLM logits
+        :return: Tensor of CLS logits
+        """
+        # Extract masked logits from the original logits
         masked_logits = logits[mlm_labels >= 0]
+
+        # Convert each masked MLM logit to a CLS logit using _convert_single_mlm_logits_to_cls_logits
         cls_logits = torch.stack([self._convert_single_mlm_logits_to_cls_logits(ml) for ml in masked_logits])
+
         return cls_logits
 
+
     def _convert_single_mlm_logits_to_cls_logits(self, logits: torch.Tensor) -> torch.Tensor:
+        """
+        Convert a single tensor of MLM (Masked Language Modeling) logits to a tensor of CLS (Classification) logits.
+
+        :param logits: Tensor containing MLM logits for a single example
+        :return: Tensor of CLS logits
+        """
+        # Get the MLM-to-CLS mapping tensor and ensure it's on the same device as the logits
         m2c = self.mlm_logits_to_cls_logits_tensor.to(logits.device)
-        # filler_len.shape() == max_fillers
+
+        # Calculate the number of fillers for each label
         filler_len = torch.tensor([len(self.verbalize(label)) for label in self.wrapper.config.label_list],
-                                  dtype=torch.float)
+                                dtype=torch.float)
         filler_len = filler_len.to(logits.device)
 
-        # cls_logits.shape() == num_labels x max_fillers  (and 0 when there are not as many fillers).
+        # Extract and prepare CLS logits using the mapping tensor
         cls_logits = logits[torch.max(torch.zeros_like(m2c), m2c)]
         cls_logits = cls_logits * (m2c > 0).float()
 
-        # cls_logits.shape() == num_labels
+        # Calculate the final CLS logits by summing and normalizing
         cls_logits = cls_logits.sum(axis=1) / filler_len
+
         return cls_logits
 
     def convert_plm_logits_to_cls_logits(self, logits: torch.Tensor) -> torch.Tensor:
+        """
+        Convert PLM (Permuted Language Modeling) logits to CLS (Classification) logits.
+
+        :param logits: Tensor containing PLM logits, where each example corresponds to a permuted version
+        :return: Tensor of CLS logits
+        """
+        # Ensure the input logits have the expected shape
         assert logits.shape[1] == 1
-        logits = torch.squeeze(logits, 1)  # remove second dimension as we always have exactly one <mask> per example
+
+        # Squeeze the second dimension (as we always have exactly one <mask> per example)
+        logits = torch.squeeze(logits, 1)
+
+        # Convert each permuted MLM logit to a CLS logit using _convert_single_mlm_logits_to_cls_logits
         cls_logits = torch.stack([self._convert_single_mlm_logits_to_cls_logits(lgt) for lgt in logits])
+
         return cls_logits
 
     @staticmethod
     def _load_verbalizer_from_file(path: str, pattern_id: int):
+        """
+        Load a verbalizer from a file.
 
+        :param path (str): The path to the file containing the verbalizer.
+        :param pattern_id (int): The ID of the pattern to load.
+        """
         verbalizers = defaultdict(dict)  # type: Dict[int, Dict[str, List[str]]]
         current_pattern_id = None
 
