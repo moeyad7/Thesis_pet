@@ -18,24 +18,32 @@ import logging
 names = set()
 
 
+# Define a function to set up a custom logger
 def __setup_custom_logger(name: str) -> logging.Logger:
+    # Get the root logger (the main logger for the application) and clear any existing handlers
+    # Handlers are responsible for determining what happens to log records (log messages) after they have been created by loggers.
     root_logger = logging.getLogger()
     root_logger.handlers.clear()
 
+    # Create a log message formatter
     formatter = logging.Formatter(fmt='%(asctime)s - %(levelname)s - %(module)s - %(message)s')
 
+    # Add the given name to a set of logger names
     names.add(name)
 
+    # Create a log handler that sends log messages to the console (stdout)
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
 
+    # Create a new logger with the specified name
     logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
-    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)  # Set the logging level to INFO
+    logger.addHandler(handler)  # Attach the handler to the logger
     return logger
 
 
 def get_logger(name: str) -> logging.Logger:
+    # if the logger already exists, return it else create a new logger
     if name in names:
         return logging.getLogger(name)
     else:
