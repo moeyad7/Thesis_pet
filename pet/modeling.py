@@ -320,8 +320,8 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
     :param seed: the random seed to use
     """
 
-    results = defaultdict(lambda: defaultdict(list))
-    set_seed(seed)
+    results = defaultdict(lambda: defaultdict(list))  # A dictionary to store evaluation results
+    set_seed(seed)  # Set the random seed for reproducibility
 
     for pattern_id in pattern_ids:
         for iteration in range(repetitions):
@@ -338,18 +338,19 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
             if not os.path.exists(pattern_iter_output_dir):
                 os.makedirs(pattern_iter_output_dir)
 
-            wrapper = init_model(model_config)
+            wrapper = init_model(model_config)  # Initialize the model
 
             # Training
             if do_train:
                 if ipet_data_dir:
                     p = os.path.join(ipet_data_dir, 'p{}-i{}-train.bin'.format(pattern_id, iteration))
-                    ipet_train_data = InputExample.load_examples(p)
+                    ipet_train_data = InputExample.load_examples(p)  # Load iPET training data
                     for example in ipet_train_data:
                         example.logits = None
                 else:
                     ipet_train_data = None
 
+                # Train the model
                 results_dict.update(train_single_model(wrapper, train_data, train_config, eval_config,
                                                        ipet_train_data=ipet_train_data,
                                                        unlabeled_data=unlabeled_data))
@@ -431,6 +432,7 @@ def train_single_model(model: TransformerModelWrapper, train_data: List[InputExa
     model.model.to(device)
 
     if train_data and return_train_set_results:
+        # Evaluate the model on the train set before training and store the accuracy
         results_dict['train_set_before_training'] = evaluate(model, train_data, eval_config)['scores']['acc']
 
     all_train_data = train_data + ipet_train_data
@@ -438,6 +440,7 @@ def train_single_model(model: TransformerModelWrapper, train_data: List[InputExa
     if not all_train_data and not config.use_logits:
         logger.warning('Training method was called without training examples')
     else:
+        # Train the model
         global_step, tr_loss = model.train(
             all_train_data, device,
             per_gpu_train_batch_size=config.per_gpu_train_batch_size,
@@ -461,6 +464,7 @@ def train_single_model(model: TransformerModelWrapper, train_data: List[InputExa
         results_dict['average_loss'] = tr_loss
 
     if train_data and return_train_set_results:
+        # Evaluate the model on the train set after training and store the accuracy
         results_dict['train_set_after_training'] = evaluate(model, train_data, eval_config)['scores']['acc']
 
     return results_dict
@@ -478,20 +482,26 @@ def evaluate(model: TransformerModelWrapper, eval_data: List[InputExample], conf
     :return: a dictionary containing the model's logits, predictions and (if any metrics are given) scores
     """
 
+    # If priming is enabled, add priming data to each evaluation example
     if config.priming:
         for example in eval_data:
             example.meta['priming_data'] = priming_data
 
+    # Define the evaluation metrics to be used
     metrics = config.metrics if config.metrics else ['acc']
     device = torch.device(config.device if config.device else "cuda" if torch.cuda.is_available() else "cpu")
 
     model.model.to(device)
+
+    # Evaluate the model and get results, including logits
     results = model.eval(eval_data, device, per_gpu_eval_batch_size=config.per_gpu_eval_batch_size,
                          n_gpu=config.n_gpu, decoding_strategy=config.decoding_strategy, priming=config.priming)
 
+    # Compute predictions based on logits
     predictions = np.argmax(results['logits'], axis=1)
     scores = {}
 
+    # Calculate scores based on specified metrics
     for metric in metrics:
         if metric == 'acc':
             scores[metric] = simple_accuracy(predictions, results['labels'])
@@ -504,6 +514,7 @@ def evaluate(model: TransformerModelWrapper, eval_data: List[InputExample], conf
         else:
             raise ValueError(f"Metric '{metric}' not implemented")
 
+    # Add scores and predictions to the results dictionary
     results['scores'] = scores
     results['predictions'] = predictions
     return results
@@ -540,6 +551,7 @@ def merge_logits(logits_dir: str, output_file: str, reduction: str):
            equally, for 'wmean', each model's contribution is proportional to its accuracy on the training set before
            training.
     """
+    # Get a list of subdirectories in the specified directory
     subdirs = next(os.walk(logits_dir))[1]
     logger.info("Found the following {} subdirectories: {}".format(len(subdirs), subdirs))
 
@@ -550,10 +562,12 @@ def merge_logits(logits_dir: str, output_file: str, reduction: str):
         logits_file = os.path.join(logits_dir, subdir, 'logits.txt')
         logits = []
 
+        # Check if 'results.txt' and 'logits.txt' exist in the subdirectory
         if not os.path.exists(results_file) or not os.path.exists(logits_file):
             logger.warning(f"Skipping subdir '{subdir}' because 'results.txt' or 'logits.txt' not found")
             continue
 
+        # Determine the model's training score before training
         if reduction == 'mean':
             result_train = 1
         else:
@@ -561,6 +575,7 @@ def merge_logits(logits_dir: str, output_file: str, reduction: str):
                 results = ast.literal_eval(fh.read())
                 result_train = results['train_set_before_training']
 
+        # Read logits from the 'logits.txt' file
         with open(logits_file, 'r') as fh:
             for line in fh.read().splitlines():
                 example_logits = [float(x) for x in line.split()]
@@ -572,6 +587,7 @@ def merge_logits(logits_dir: str, output_file: str, reduction: str):
         loglist = LogitsList(score=result_train, logits=logits)
         all_logits_lists.append(loglist)
 
+    # Merge the lists of logits based on the specified reduction strategy
     merged_loglist = merge_logits_lists(all_logits_lists, reduction=reduction)
     merged_loglist.save(output_file)
 
@@ -587,6 +603,7 @@ def merge_logits_lists(logits_lists: List[LogitsList], reduction: str = 'mean') 
     :return: the merged list
     """
 
+    # Ensure that the lengths of logits in the input lists are consistent
     assert len(set(len(ll.logits) for ll in logits_lists)) == 1
     logits = np.array([ll.logits for ll in logits_lists])
     weights = np.array([ll.score for ll in logits_lists])
