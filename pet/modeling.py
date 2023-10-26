@@ -639,13 +639,17 @@ def generate_ipet_train_sets(train_data: List[InputExample], unlabeled_data: Lis
                               if their predicted label is different
     :param seed: the random seed to use
     """
+    # Get the list of subdirectories in the logits directory
     subdirs = next(os.walk(logits_dir))[1]
 
+    # Create the output directory if it doesn't exist
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
+    # Log the subdirectories found in the logits directory
     logger.info("Found the following {} subdirectories: {}".format(len(subdirs), subdirs))
 
+    # Calculate the distribution of examples per label in the original dataset
     if train_data:
         train_examples_per_label = [sum(1 for ex in train_data if ex.label == label) for label in labels]
         multiplier = num_new_examples / len(train_data)
@@ -654,25 +658,32 @@ def generate_ipet_train_sets(train_data: List[InputExample], unlabeled_data: Lis
     else:
         examples_per_label = eq_div(num_new_examples, len(labels))
 
+    # Log the target distribution for the new dataset
     logger.info(f"Target distribution for the new dataset: {examples_per_label}")
 
+    # Clear labels and logits from unlabeled examples
     for example in unlabeled_data:
         example.label, example.logits = None, None
 
+    # Create an empty dictionary to store logits lists from different subdirectories
     logits_lists = {}
 
+    # Initialize random number generators
     rng = random.Random(seed)
     rng_np = np.random.RandomState(seed)
 
+    # Loop through subdirectories in the logits directory
     for subdir in subdirs:
         results_file = os.path.join(logits_dir, subdir, 'results.txt')
         logits_file = os.path.join(logits_dir, subdir, 'logits.txt')
         logits = []
 
+        # Skip subdirectories that don't contain 'results.txt' or 'logits.txt'
         if not os.path.exists(results_file) or not os.path.exists(logits_file):
             logger.warning(f"Skipping subdir '{subdir}' because 'results.txt' or 'logits.txt' not found")
             continue
 
+        # Determine the reduction strategy for this subdirectory
         if reduction == 'mean':
             result_train = 1
         else:
@@ -680,17 +691,21 @@ def generate_ipet_train_sets(train_data: List[InputExample], unlabeled_data: Lis
                 results = ast.literal_eval(fh.read())
                 result_train = results['train_set_before_training']
 
+        # Read logits from the 'logits.txt' file
         with open(logits_file, 'r') as fh:
             for line in fh.read().splitlines():
                 example_logits = [float(x) for x in line.split()]
                 logits.append(example_logits)
 
+        # Log information about the current subdirectory
         logger.info("File {}: Score = {}, #Logits = {}, #Labels = {}".format(
             results_file, result_train, len(logits), len(logits[0])))
 
+        # Create a LogitsList object and store it in the dictionary
         loglist = LogitsList(score=result_train, logits=logits)
         logits_lists[subdir] = loglist
 
+    # Loop through subdirectories again to generate training sets
     for subdir in subdirs:
         other_logits_lists = [ll for sd, ll in logits_lists.items() if sd != subdir]
         subdir_train_set = generate_ipet_train_set(
@@ -699,6 +714,7 @@ def generate_ipet_train_sets(train_data: List[InputExample], unlabeled_data: Lis
             rng_np=rng_np
         )
 
+        # Save the generated training set to a binary file
         InputExample.save_examples(subdir_train_set,
                                    os.path.join(output_dir, subdir + '-train.bin'))
 
@@ -718,21 +734,25 @@ def generate_ipet_train_set(logits_lists: List[LogitsList], labels: List[str], o
     :param n_most_likely: if >0, for each label the n_most_likely examples with the highest logits are chosen
     :param rng: the random number generator to use for non-numpy operations
     :param rng_np: the random number generator to use for numpy operations
-    :return: a list of input examples that serves as training set for the next generation
+    :return: a list of input examples that serves as a training set for the next generation
     """
 
+    # Ensure that all logits_lists have the same number of logits
     assert len(set(len(ll.logits) for ll in logits_lists)) == 1
 
+    # Initialize random number generators if not provided
     if not rng:
         rng = random.Random()
     if not rng_np:
         rng_np = np.random.RandomState()
 
+    # Select a subset of logits_lists based on the specified percentage
     num_logits_lists = round(len(logits_lists) * logits_percentage)
     logits_lists = rng.sample(logits_lists, k=num_logits_lists)
     logits = np.array([ll.logits for ll in logits_lists])
     weights = np.array([ll.score for ll in logits_lists])
 
+    # Reduce logits using the specified reduction strategy ('mean' or 'wmean')
     if reduction == 'mean':
         logits = np.mean(logits, axis=0)
         logits = softmax(logits, axis=1).tolist()
@@ -742,23 +762,29 @@ def generate_ipet_train_set(logits_lists: List[LogitsList], labels: List[str], o
     else:
         raise ValueError("Reduction strategy '{}' not implemented".format(reduction))
 
+    # Ensure that the number of logits matches the original data
     assert len(logits) == len(original_data)
 
+    # Assign logits and labels to the original data
     for lgs, example in zip(logits, original_data):
         example.logits = lgs
         example.label = labels[np.argmax(example.logits).item()]
 
+    # Create a list to store the final training set
     test_set = []
 
+    # Iterate through the labels and generate examples for each label
     for idx, label in enumerate(labels):
 
         if n_most_likely <= 0:
+            # If n_most_likely is not specified, select examples with the matching label
             examples = [ex for ex in original_data if ex.label == label]
             logger.info("There are {} examples for label {}".format(len(examples), label))
             while len(examples) < examples_per_label[idx]:
-                # upsample examples if there are too few
+                # Upsample examples if there are too few
                 examples.extend(ex for ex in original_data if ex.label == label)
         else:
+            # If n_most_likely is specified, select the top-n examples with the highest logits
             examples = [(ex.logits[idx], ex_idx, ex) for ex_idx, ex in enumerate(original_data)]
             examples.sort(reverse=True)
             examples = [ex for score, ex_idx, ex in examples[:n_most_likely]]
@@ -767,15 +793,28 @@ def generate_ipet_train_set(logits_lists: List[LogitsList], labels: List[str], o
                 example.logits = [example.logits[idx]]
                 example.label = label
 
+        # Draw examples based on label probabilities and add them to the test_set
         label_examples = _draw_examples_by_label_probability(
             examples=examples, num_examples=examples_per_label[idx], rng=rng_np)
         test_set.extend(label_examples)
 
+    # Return the generated training set
     return test_set
 
 
 def _draw_examples_by_label_probability(examples: List[InputExample], num_examples: int, rng) -> List[InputExample]:
+    # Calculate label probabilities based on the maximum logits for each example
     label_probabilities = [max(example.logits) for example in examples]
+
+    # Calculate the sum of label probabilities
     sum_label_probabilities = sum(label_probabilities)
+
+    # Normalize label probabilities to ensure they sum up to 1
     label_probabilities = [p / sum_label_probabilities for p in label_probabilities]
-    return rng.choice(examples, size=num_examples, replace=False, p=label_probabilities).tolist()
+
+    # Use a random number generator to select examples based on label probabilities
+    selected_examples = rng.choice(examples, size=num_examples, replace=False, p=label_probabilities)
+
+    # Convert the selected examples to a list and return them
+    return selected_examples.tolist()
+
