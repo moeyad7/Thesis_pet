@@ -559,7 +559,7 @@ class TransformerModelWrapper:
             lm_inputs = self.generate_default_inputs(unlabeled_batch)
 
             # Set the 'masked_lm_labels' in the LM inputs to unlabeled batch's MLM labels
-            lm_inputs['label'] = unlabeled_batch['mlm_labels'] # replaced masked_lm_labels with label
+            lm_inputs['labels'] = unlabeled_batch['mlm_labels'] # replaced masked_lm_labels with label
 
             # Compute the auxiliary language modeling loss
             lm_loss = self.model(**lm_inputs)[0]
