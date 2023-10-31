@@ -239,7 +239,8 @@ class TransformerModelWrapper:
         :param max_steps: the maximum number of training steps, overrides ``num_train_epochs``
         :return: a tuple consisting of the total number of steps and the average training loss
         """
-
+        # Load the training data
+        # RandomSampler(train_dataset) returns indices of the examples in a random order 
         train_batch_size = per_gpu_train_batch_size * max(1, n_gpu)
         train_dataset = self._generate_dataset(task_train_data)
         train_sampler = RandomSampler(train_dataset)
@@ -250,6 +251,7 @@ class TransformerModelWrapper:
         if lm_training or use_logits:
             # we need unlabeled data both for auxiliary language modeling and for knowledge distillation
             assert unlabeled_data is not None
+            # Load the unlabeled data
             unlabeled_batch_size = per_gpu_unlabeled_batch_size * max(1, n_gpu)
             unlabeled_dataset = self._generate_dataset(unlabeled_data, labelled=False)
             unlabeled_sampler = RandomSampler(unlabeled_dataset)
@@ -257,9 +259,11 @@ class TransformerModelWrapper:
                                               batch_size=unlabeled_batch_size)
             unlabeled_iter = unlabeled_dataloader.__iter__()
 
+        # if we use logits, we need to use the unlabeled data for training
         if use_logits:
             train_dataloader = unlabeled_dataloader
 
+        # if max_steps is set, we override the number of epochs
         if max_steps > 0:
             t_total = max_steps
             num_train_epochs = max_steps // (max(1, len(train_dataloader) // gradient_accumulation_steps)) + 1
@@ -279,40 +283,52 @@ class TransformerModelWrapper:
         scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=warmup_steps,
                                                     num_training_steps=t_total)
 
-
+        # Training
         step = 0
         global_step = 0
         tr_loss, logging_loss = 0.0, 0.0
         self.model.zero_grad()
 
         train_iterator = trange(int(num_train_epochs), desc="Epoch")
-
+        # Number of training epochs
         for _ in train_iterator:
             epoch_iterator = tqdm(train_dataloader, desc="Iteration")
+            # Number of batches in one epoch
             for _, batch in enumerate(epoch_iterator):
                 self.model.train()
                 unlabeled_batch = None
-
+                # move batch to device
                 batch = {k: t.to(device) for k, t in batch.items()}
 
                 if lm_training:
+                    # Check if unlabeled_batch is None
                     while unlabeled_batch is None:
                         try:
+                            # Try to get the next batch from the unlabeled data iterator
                             unlabeled_batch = unlabeled_iter.__next__()
                         except StopIteration:
+                            # If there are no more batches, reset the unlabeled dataset
                             logger.info("Resetting unlabeled dataset")
                             unlabeled_iter = unlabeled_dataloader.__iter__()
 
+                    # Get the input_ids from the unlabeled batch
                     lm_input_ids = unlabeled_batch['input_ids']
+
+                    # Mask tokens in the input_ids and generate mlm_labels
                     unlabeled_batch['input_ids'], unlabeled_batch['mlm_labels'] = self._mask_tokens(lm_input_ids)
+
+                    # Move the processed unlabeled batch to the training device (e.g., GPU)
                     unlabeled_batch = {k: t.to(device) for k, t in unlabeled_batch.items()}
 
+                # Generate the inputs for the training step
                 train_step_inputs = {
                     'unlabeled_batch': unlabeled_batch, 'lm_training': lm_training, 'alpha': alpha,
                     'use_logits': use_logits, 'temperature': temperature
                 }
+                # Some tasks require special training
                 loss = self.task_helper.train_step(batch, **train_step_inputs) if self.task_helper else None
-
+                
+                # If the task helper does not return a loss, we use the default training step
                 if loss is None:
                     loss = TRAIN_STEP_FUNCTIONS[self.config.wrapper_type](self)(batch, **train_step_inputs)
 
@@ -323,23 +339,46 @@ class TransformerModelWrapper:
 
                 loss.backward()
 
+                # Update the cumulative training loss
                 tr_loss += loss.item()
+
+                # Check if it's time to perform a gradient update
                 if (step + 1) % gradient_accumulation_steps == 0:
+                    # Clip gradients to prevent explosion
                     torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_grad_norm)
+                    
+                    # Perform an optimization step
                     optimizer.step()
+                    
+                    # Adjust the learning rate scheduler
                     scheduler.step()
+                    
+                    # Reset gradients to zero for the next batch
                     self.model.zero_grad()
+                    
+                    # Update the global step counter
                     global_step += 1
 
+                    # If it's time to log training information
                     if logging_steps > 0 and global_step % logging_steps == 0:
                         logs = {}
+                        
+                        # Calculate the average loss for the current interval
                         loss_scalar = (tr_loss - logging_loss) / logging_steps
+                        
+                        # Get the current learning rate
                         learning_rate_scalar = scheduler.get_lr()[0]
+                        
+                        # Store the learning rate and loss in the logs
                         logs['learning_rate'] = learning_rate_scalar
                         logs['loss'] = loss_scalar
+                        
+                        # Update the logging loss for the next interval
                         logging_loss = tr_loss
 
+                        # Print the logs in JSON format
                         print(json.dumps({**logs, **{'step': global_step}}))
+
 
                 if 0 < max_steps < global_step:
                     epoch_iterator.close()
@@ -365,7 +404,7 @@ class TransformerModelWrapper:
         :return: a dictionary of numpy arrays containing the indices, logits, labels, and (optional) question_ids for
                  each evaluation example.
         """
-
+        # Load the evaluation data
         eval_dataset = self._generate_dataset(eval_data, priming=priming)
         eval_batch_size = per_gpu_eval_batch_size * max(1, n_gpu)
         eval_sampler = SequentialSampler(eval_dataset)
@@ -374,12 +413,15 @@ class TransformerModelWrapper:
         preds = None
         all_indices, out_label_ids, question_ids = None, None, None
 
+        # Iterate over evaluation batches
         for batch in tqdm(eval_dataloader, desc="Evaluating"):
             self.model.eval()
 
+            # Move batch data to the evaluation device
             batch = {k: t.to(device) for k, t in batch.items()}
             labels = batch['labels']
             indices = batch['idx']
+            
             with torch.no_grad():
 
                 # some tasks require special evaluation
@@ -389,6 +431,7 @@ class TransformerModelWrapper:
                 if logits is None:
                     logits = EVALUATION_STEP_FUNCTIONS[self.config.wrapper_type](self)(batch)
 
+            # Collect predictions, labels, indices, and question_ids (if available)
             if preds is None:
                 preds = logits.detach().cpu().numpy()
                 out_label_ids = labels.detach().cpu().numpy()
@@ -402,6 +445,7 @@ class TransformerModelWrapper:
                 if 'question_idx' in batch:
                     question_ids = np.append(question_ids, batch['question_idx'].detach().cpu().numpy(), axis=0)
 
+        # Return evaluation results as a dictionary
         return {
             'indices': all_indices,
             'logits': preds,
@@ -483,22 +527,48 @@ class TransformerModelWrapper:
         return inputs
 
     def mlm_train_step(self, labeled_batch: Dict[str, torch.Tensor],
-                       unlabeled_batch: Optional[Dict[str, torch.Tensor]] = None, lm_training: bool = False,
-                       alpha: float = 0, **_) -> torch.Tensor:
-        """Perform a MLM training step."""
+                   unlabeled_batch: Optional[Dict[str, torch.Tensor]] = None,
+                   lm_training: bool = False, alpha: float = 0, **_) -> torch.Tensor:
+        """
+        Perform a Masked Language Model (MLM) training step.
 
+        :param labeled_batch: Batch of labeled examples with MLM labels and labels.
+        :param unlabeled_batch: Batch of unlabeled examples for auxiliary language modeling.
+        :param lm_training: Flag indicating whether auxiliary language modeling is enabled.
+        :param alpha: Weight parameter for combining MLM and auxiliary LM loss.
+        :return: Loss value for the training step.
+        """
+
+        # Generate model inputs from the labeled batch
         inputs = self.generate_default_inputs(labeled_batch)
+
+        # Extract MLM labels and labels from the labeled batch
         mlm_labels, labels = labeled_batch['mlm_labels'], labeled_batch['labels']
 
+        # Get model outputs for the labeled batch
         outputs = self.model(**inputs)
+
+        # Convert MLM logits to classification logits
         prediction_scores = self.preprocessor.pvp.convert_mlm_logits_to_cls_logits(mlm_labels, outputs[0])
-        loss = nn.CrossEntropyLoss()(prediction_scores.view(-1, len(self.config.label_list)), labels.view(-1))
+
+        # Calculate the MLM loss
+        mlm_loss = nn.CrossEntropyLoss()(prediction_scores.view(-1, len(self.config.label_list)), labels.view(-1))
 
         if lm_training:
+            # If auxiliary language modeling is enabled, generate LM inputs from the unlabeled batch
             lm_inputs = self.generate_default_inputs(unlabeled_batch)
-            lm_inputs['masked_lm_labels'] = unlabeled_batch['mlm_labels']
+
+            # Set the 'masked_lm_labels' in the LM inputs to unlabeled batch's MLM labels
+            lm_inputs['labels'] = unlabeled_batch['mlm_labels'] # replaced masked_lm_labels with label
+
+            # Compute the auxiliary language modeling loss
             lm_loss = self.model(**lm_inputs)[0]
-            loss = alpha * loss + (1 - alpha) * lm_loss
+
+            # Combine the MLM and auxiliary LM loss using the alpha parameter
+            loss = alpha * mlm_loss + (1 - alpha) * lm_loss
+        else:
+            loss = mlm_loss  # Use only the MLM loss
+
         return loss
 
     def plm_train_step(self, labeled_batch: Dict[str, torch.Tensor], lm_training: bool = False, **_):

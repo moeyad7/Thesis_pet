@@ -95,13 +95,16 @@ class MultiMaskTaskHelper(TaskHelper):
         if self.wrapper.config.wrapper_type == 'sequence_classifier':
             return
 
+         # Ensure that the model type is MLM (Masked Language Model)
         assert self.wrapper.config.wrapper_type == 'mlm', 'train_step() for MultiMaskTaskHelper is only implemented for MLM models'
         inputs = self.wrapper.generate_default_inputs(batch)
         loss_fct = CrossEntropyLoss(reduction='none')
 
+        # Get prediction scores from the model
         # prediction_scores.shape == max_seq_len x vocab_size x batch_size
         prediction_scores = self.wrapper.model(**inputs)[0].permute(1, 2, 0)
 
+        # Extract relevant data from the batch
         # all_choice_token_ids.shape == batch_size x num_choices x max_seq_len
         all_choice_token_ids = batch['choice_token_ids']
         batch_size, num_choices, max_seq_len = all_choice_token_ids.shape
@@ -109,6 +112,7 @@ class MultiMaskTaskHelper(TaskHelper):
         # all_candidate_labels.shape() == batch_size
         all_labels = batch['labels']
 
+        # Prepare tensors for correct and wrong choices
         # correct_choice_token_ids.shape == max_seq_len x batch_size
         correct_choice_token_ids = all_choice_token_ids[torch.arange(batch_size), all_labels].permute(1, 0)
 
@@ -121,6 +125,7 @@ class MultiMaskTaskHelper(TaskHelper):
 
         total_loss = 0
 
+        # Compute loss for the correct choice
         # loss_correct_label.shape == batch_size
         loss_correct_choice = loss_fct(prediction_scores, correct_choice_token_ids).sum(dim=0)
 
@@ -135,15 +140,20 @@ class MultiMaskTaskHelper(TaskHelper):
 
     def eval_step(self, batch: Dict[str, torch.Tensor], batch_size: int = 8, decoding_strategy: str = 'default'):
         if self.wrapper.config.wrapper_type == 'sequence_classifier':
-            return
+            return  # Return if the model type is 'sequence_classifier'
 
+        # Ensure that the model type is MLM (Masked Language Model)
         assert self.wrapper.config.wrapper_type == 'mlm', 'eval_step() for MultiMaskTaskHelper is only implemented for MLM models'
+
+        # Ensure that the batch size is 1, as the method is implemented for batch_size=1
         assert batch['input_ids'].shape[0] == 1, "eval_step() for MultiMaskTaskHelper is only implemented for batch_size=1"
 
         all_choice_token_ids = batch['choice_token_ids'][0]
+
+        # Create a tensor of log probabilities initialized with negative infinity
         log_probabilities = torch.tensor([[-math.inf] * len(all_choice_token_ids)], dtype=torch.float, device=all_choice_token_ids.device)
 
-        # group choices by length to speed up decoding
+        # Group choices by the number of masks for faster decoding
         choices_grouped_by_length = defaultdict(list)
 
         for idx, choice_token_ids in enumerate(all_choice_token_ids):
@@ -154,7 +164,7 @@ class MultiMaskTaskHelper(TaskHelper):
         initial_outputs = {}
 
         for num_masks in choices_grouped_by_length.keys():
-            # modify the input ids to contain the correct number of masks
+            # Modify the input ids to contain the correct number of masks
             input_ids[num_masks] = trim_input_ids(batch['input_ids'], num_masks=num_masks,
                                                   pad_token_id=self.wrapper.tokenizer.pad_token_id,
                                                   mask_token_id=self.wrapper.tokenizer.mask_token_id)
@@ -167,6 +177,7 @@ class MultiMaskTaskHelper(TaskHelper):
                 batch_input_ids = input_ids[num_masks].repeat(len(batch), 1)
                 choice_token_ids = torch.stack([choice_token_ids for idx, choice_token_ids in batch])
 
+                # Get the choice probabilities for the batch
                 batch_probabilities = self._get_choice_probabilities_batched(choice_token_ids, batch_input_ids, initial_outputs[num_masks],
                                                                              decoding_strategy=decoding_strategy)
 
@@ -177,37 +188,47 @@ class MultiMaskTaskHelper(TaskHelper):
 
     def _get_choice_probabilities_batched(self, target_sequences, input_ids, initial_output, decoding_strategy):
 
+        # Initialize a dictionary to store log probabilities for each batch
         log_probabilities = defaultdict(list)
+
+        # Variable to keep track of the first call
         first_call = True
 
         while True:
+            # Create a dictionary to track masks for each batch
             masks = {batch_idx: [(idx, tok) for idx, tok in enumerate(target_sequences[batch_idx]) if tok >= 0] for
-                     batch_idx in range(len(target_sequences))}
+                    batch_idx in range(len(target_sequences))}
 
-            if not masks[0]:  # there are no masks left to process, we are done
+            if not masks[0]:
+                # If there are no masks left to process, exit the loop
                 break
 
             if first_call:
+                # Use initial outputs if it's the first iteration
                 outputs = initial_output
             else:
+                # Otherwise, get model outputs from the input_ids
                 outputs = self.wrapper.model(input_ids)
 
+            # Extract the next token logits and apply softmax to get probabilities
             next_token_logits = outputs[0]
             next_token_logits = torch.nn.Softmax(dim=2)(next_token_logits)
 
             if decoding_strategy == 'ltr':
+                # If using left-to-right decoding strategy, restrict masks to the first token
                 masks = {batch_idx: [batch_masks[0]] for batch_idx, batch_masks in masks.items()}
 
             for batch_idx in range(len(target_sequences)):
-
                 ntl = next_token_logits[batch_idx] if not first_call else next_token_logits[0]
 
                 if decoding_strategy == 'parallel':
+                    # For parallel decoding strategy, compute log probabilities for each mask
                     for m_pos, m_id in masks[batch_idx]:
                         log_probabilities[batch_idx].append(math.log(ntl[m_pos][m_id].item()))
                         target_sequences[batch_idx][m_pos] = -100
 
                 else:
+                    # For other decoding strategies, select the mask with the highest probability
                     mask_pos, masked_id = None, None
                     highest_prob = None
                     for m_pos, m_id in masks[batch_idx]:
@@ -216,46 +237,68 @@ class MultiMaskTaskHelper(TaskHelper):
                             highest_prob = m_prob
                             mask_pos, masked_id = m_pos, m_id
 
+                    # Append the log probability of the selected mask
                     log_probabilities[batch_idx].append(math.log(ntl[mask_pos][masked_id].item()))
+
+                    # Update the input_ids and mask the selected token
                     input_ids[batch_idx][mask_pos] = masked_id
                     target_sequences[batch_idx][mask_pos] = -100
 
             first_call = False
 
+        # Calculate the total log probabilities for each batch
         return {batch_idx: sum(log_prob for log_prob in log_probabilities[batch_idx]) for batch_idx in
                 range(len(target_sequences))}
 
     def add_special_input_features(self, input_example: InputExample, input_features: InputFeatures) -> None:
+        # Check if the model wrapper type is 'sequence_classifier'
         if self.wrapper.config.wrapper_type == 'sequence_classifier':
             return
 
+        # Find the position (index) of the mask token in the input_ids
         mask_start = input_features.input_ids.index(self.wrapper.tokenizer.mask_token_id)
 
         if 'choices' in input_example.meta:
+            # If 'choices' are provided in the example's meta information, use them
             choices = [choice for choice in input_example.meta['choices']]
         else:
+            # If 'choices' are not provided, obtain choices from the label list
             label_list = self.wrapper.config.label_list
             choices = [self.wrapper.preprocessor.pvp.verbalize(label)[0] for label in label_list]
 
+        # Initialize a list to store choice_token_ids for each choice
         input_features.meta['choice_token_ids'] = []
 
         for idx, choice_text in enumerate(choices):
+            # Convert choice text into token IDs using the tokenizer
             choice_token_ids = get_verbalization_ids(choice_text, self.wrapper.tokenizer, force_single_token=False)
+
+            # Calculate the end position of the mask for the current choice
             mask_end = mask_start + len(choice_token_ids)
+
+            # Initialize candidate_token_ids with -100 (mask token) and set the choice_token_ids in the appropriate place
             candidate_token_ids = [-100] * len(input_features.input_ids)
             candidate_token_ids[mask_start:mask_end] = choice_token_ids
+
+            # Append the candidate_token_ids to the list for this choice
             input_features.meta['choice_token_ids'].append(candidate_token_ids)
 
     def add_features_to_dict(self, features: List[InputFeatures], feature_dict: Dict[str, torch.Tensor]) -> None:
+        # Check if the model wrapper type is 'sequence_classifier'
         if self.wrapper.config.wrapper_type == 'sequence_classifier':
+            # For sequence classifier wrappers, return immediately
             return
-        
+
+        # Find the maximum number of choices among all features
         max_num_choices = max(len(f.meta['choice_token_ids']) for f in features)
+        
+        # Iterate through each feature and check if the number of choices is consistent
         for feature in features:
             if len(feature.meta['choice_token_ids']) != max_num_choices:
                 raise ValueError(f"The number of output choices must be identical for all examples, got "
                                  f"{len(feature.meta['choice_token_ids'])} and {max_num_choices}")
 
+        # Add the 'choice_token_ids' as a tensor to the feature dictionary
         feature_dict['choice_token_ids'] = torch.tensor([f.meta['choice_token_ids'] for f in features], dtype=torch.long)
 
 

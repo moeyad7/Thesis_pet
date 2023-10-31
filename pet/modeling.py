@@ -320,8 +320,8 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
     :param seed: the random seed to use
     """
 
-    results = defaultdict(lambda: defaultdict(list))
-    set_seed(seed)
+    results = defaultdict(lambda: defaultdict(list))  # A dictionary to store evaluation results
+    set_seed(seed)  # Set the random seed for reproducibility
 
     for pattern_id in pattern_ids:
         for iteration in range(repetitions):
@@ -338,18 +338,19 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
             if not os.path.exists(pattern_iter_output_dir):
                 os.makedirs(pattern_iter_output_dir)
 
-            wrapper = init_model(model_config)
+            wrapper = init_model(model_config)  # Initialize the model
 
             # Training
             if do_train:
                 if ipet_data_dir:
                     p = os.path.join(ipet_data_dir, 'p{}-i{}-train.bin'.format(pattern_id, iteration))
-                    ipet_train_data = InputExample.load_examples(p)
+                    ipet_train_data = InputExample.load_examples(p)  # Load iPET training data
                     for example in ipet_train_data:
                         example.logits = None
                 else:
                     ipet_train_data = None
 
+                # Train the model
                 results_dict.update(train_single_model(wrapper, train_data, train_config, eval_config,
                                                        ipet_train_data=ipet_train_data,
                                                        unlabeled_data=unlabeled_data))
@@ -431,6 +432,7 @@ def train_single_model(model: TransformerModelWrapper, train_data: List[InputExa
     model.model.to(device)
 
     if train_data and return_train_set_results:
+        # Evaluate the model on the train set before training and store the accuracy
         results_dict['train_set_before_training'] = evaluate(model, train_data, eval_config)['scores']['acc']
 
     all_train_data = train_data + ipet_train_data
@@ -438,6 +440,7 @@ def train_single_model(model: TransformerModelWrapper, train_data: List[InputExa
     if not all_train_data and not config.use_logits:
         logger.warning('Training method was called without training examples')
     else:
+        # Train the model
         global_step, tr_loss = model.train(
             all_train_data, device,
             per_gpu_train_batch_size=config.per_gpu_train_batch_size,
@@ -461,6 +464,7 @@ def train_single_model(model: TransformerModelWrapper, train_data: List[InputExa
         results_dict['average_loss'] = tr_loss
 
     if train_data and return_train_set_results:
+        # Evaluate the model on the train set after training and store the accuracy
         results_dict['train_set_after_training'] = evaluate(model, train_data, eval_config)['scores']['acc']
 
     return results_dict
@@ -478,20 +482,26 @@ def evaluate(model: TransformerModelWrapper, eval_data: List[InputExample], conf
     :return: a dictionary containing the model's logits, predictions and (if any metrics are given) scores
     """
 
+    # If priming is enabled, add priming data to each evaluation example
     if config.priming:
         for example in eval_data:
             example.meta['priming_data'] = priming_data
 
+    # Define the evaluation metrics to be used
     metrics = config.metrics if config.metrics else ['acc']
     device = torch.device(config.device if config.device else "cuda" if torch.cuda.is_available() else "cpu")
 
     model.model.to(device)
+
+    # Evaluate the model and get results, including logits
     results = model.eval(eval_data, device, per_gpu_eval_batch_size=config.per_gpu_eval_batch_size,
                          n_gpu=config.n_gpu, decoding_strategy=config.decoding_strategy, priming=config.priming)
 
+    # Compute predictions based on logits
     predictions = np.argmax(results['logits'], axis=1)
     scores = {}
 
+    # Calculate scores based on specified metrics
     for metric in metrics:
         if metric == 'acc':
             scores[metric] = simple_accuracy(predictions, results['labels'])
@@ -504,6 +514,7 @@ def evaluate(model: TransformerModelWrapper, eval_data: List[InputExample], conf
         else:
             raise ValueError(f"Metric '{metric}' not implemented")
 
+    # Add scores and predictions to the results dictionary
     results['scores'] = scores
     results['predictions'] = predictions
     return results
@@ -540,6 +551,7 @@ def merge_logits(logits_dir: str, output_file: str, reduction: str):
            equally, for 'wmean', each model's contribution is proportional to its accuracy on the training set before
            training.
     """
+    # Get a list of subdirectories in the specified directory
     subdirs = next(os.walk(logits_dir))[1]
     logger.info("Found the following {} subdirectories: {}".format(len(subdirs), subdirs))
 
@@ -550,10 +562,12 @@ def merge_logits(logits_dir: str, output_file: str, reduction: str):
         logits_file = os.path.join(logits_dir, subdir, 'logits.txt')
         logits = []
 
+        # Check if 'results.txt' and 'logits.txt' exist in the subdirectory
         if not os.path.exists(results_file) or not os.path.exists(logits_file):
             logger.warning(f"Skipping subdir '{subdir}' because 'results.txt' or 'logits.txt' not found")
             continue
 
+        # Determine the model's training score before training
         if reduction == 'mean':
             result_train = 1
         else:
@@ -561,6 +575,7 @@ def merge_logits(logits_dir: str, output_file: str, reduction: str):
                 results = ast.literal_eval(fh.read())
                 result_train = results['train_set_before_training']
 
+        # Read logits from the 'logits.txt' file
         with open(logits_file, 'r') as fh:
             for line in fh.read().splitlines():
                 example_logits = [float(x) for x in line.split()]
@@ -572,6 +587,7 @@ def merge_logits(logits_dir: str, output_file: str, reduction: str):
         loglist = LogitsList(score=result_train, logits=logits)
         all_logits_lists.append(loglist)
 
+    # Merge the lists of logits based on the specified reduction strategy
     merged_loglist = merge_logits_lists(all_logits_lists, reduction=reduction)
     merged_loglist.save(output_file)
 
@@ -587,6 +603,7 @@ def merge_logits_lists(logits_lists: List[LogitsList], reduction: str = 'mean') 
     :return: the merged list
     """
 
+    # Ensure that the lengths of logits in the input lists are consistent
     assert len(set(len(ll.logits) for ll in logits_lists)) == 1
     logits = np.array([ll.logits for ll in logits_lists])
     weights = np.array([ll.score for ll in logits_lists])
@@ -622,13 +639,17 @@ def generate_ipet_train_sets(train_data: List[InputExample], unlabeled_data: Lis
                               if their predicted label is different
     :param seed: the random seed to use
     """
+    # Get the list of subdirectories in the logits directory
     subdirs = next(os.walk(logits_dir))[1]
 
+    # Create the output directory if it doesn't exist
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
+    # Log the subdirectories found in the logits directory
     logger.info("Found the following {} subdirectories: {}".format(len(subdirs), subdirs))
 
+    # Calculate the distribution of examples per label in the original dataset
     if train_data:
         train_examples_per_label = [sum(1 for ex in train_data if ex.label == label) for label in labels]
         multiplier = num_new_examples / len(train_data)
@@ -637,25 +658,32 @@ def generate_ipet_train_sets(train_data: List[InputExample], unlabeled_data: Lis
     else:
         examples_per_label = eq_div(num_new_examples, len(labels))
 
+    # Log the target distribution for the new dataset
     logger.info(f"Target distribution for the new dataset: {examples_per_label}")
 
+    # Clear labels and logits from unlabeled examples
     for example in unlabeled_data:
         example.label, example.logits = None, None
 
+    # Create an empty dictionary to store logits lists from different subdirectories
     logits_lists = {}
 
+    # Initialize random number generators
     rng = random.Random(seed)
     rng_np = np.random.RandomState(seed)
 
+    # Loop through subdirectories in the logits directory
     for subdir in subdirs:
         results_file = os.path.join(logits_dir, subdir, 'results.txt')
         logits_file = os.path.join(logits_dir, subdir, 'logits.txt')
         logits = []
 
+        # Skip subdirectories that don't contain 'results.txt' or 'logits.txt'
         if not os.path.exists(results_file) or not os.path.exists(logits_file):
             logger.warning(f"Skipping subdir '{subdir}' because 'results.txt' or 'logits.txt' not found")
             continue
 
+        # Determine the reduction strategy for this subdirectory
         if reduction == 'mean':
             result_train = 1
         else:
@@ -663,17 +691,21 @@ def generate_ipet_train_sets(train_data: List[InputExample], unlabeled_data: Lis
                 results = ast.literal_eval(fh.read())
                 result_train = results['train_set_before_training']
 
+        # Read logits from the 'logits.txt' file
         with open(logits_file, 'r') as fh:
             for line in fh.read().splitlines():
                 example_logits = [float(x) for x in line.split()]
                 logits.append(example_logits)
 
+        # Log information about the current subdirectory
         logger.info("File {}: Score = {}, #Logits = {}, #Labels = {}".format(
             results_file, result_train, len(logits), len(logits[0])))
 
+        # Create a LogitsList object and store it in the dictionary
         loglist = LogitsList(score=result_train, logits=logits)
         logits_lists[subdir] = loglist
 
+    # Loop through subdirectories again to generate training sets
     for subdir in subdirs:
         other_logits_lists = [ll for sd, ll in logits_lists.items() if sd != subdir]
         subdir_train_set = generate_ipet_train_set(
@@ -682,6 +714,7 @@ def generate_ipet_train_sets(train_data: List[InputExample], unlabeled_data: Lis
             rng_np=rng_np
         )
 
+        # Save the generated training set to a binary file
         InputExample.save_examples(subdir_train_set,
                                    os.path.join(output_dir, subdir + '-train.bin'))
 
@@ -701,21 +734,25 @@ def generate_ipet_train_set(logits_lists: List[LogitsList], labels: List[str], o
     :param n_most_likely: if >0, for each label the n_most_likely examples with the highest logits are chosen
     :param rng: the random number generator to use for non-numpy operations
     :param rng_np: the random number generator to use for numpy operations
-    :return: a list of input examples that serves as training set for the next generation
+    :return: a list of input examples that serves as a training set for the next generation
     """
 
+    # Ensure that all logits_lists have the same number of logits
     assert len(set(len(ll.logits) for ll in logits_lists)) == 1
 
+    # Initialize random number generators if not provided
     if not rng:
         rng = random.Random()
     if not rng_np:
         rng_np = np.random.RandomState()
 
+    # Select a subset of logits_lists based on the specified percentage
     num_logits_lists = round(len(logits_lists) * logits_percentage)
     logits_lists = rng.sample(logits_lists, k=num_logits_lists)
     logits = np.array([ll.logits for ll in logits_lists])
     weights = np.array([ll.score for ll in logits_lists])
 
+    # Reduce logits using the specified reduction strategy ('mean' or 'wmean')
     if reduction == 'mean':
         logits = np.mean(logits, axis=0)
         logits = softmax(logits, axis=1).tolist()
@@ -725,23 +762,29 @@ def generate_ipet_train_set(logits_lists: List[LogitsList], labels: List[str], o
     else:
         raise ValueError("Reduction strategy '{}' not implemented".format(reduction))
 
+    # Ensure that the number of logits matches the original data
     assert len(logits) == len(original_data)
 
+    # Assign logits and labels to the original data
     for lgs, example in zip(logits, original_data):
         example.logits = lgs
         example.label = labels[np.argmax(example.logits).item()]
 
+    # Create a list to store the final training set
     test_set = []
 
+    # Iterate through the labels and generate examples for each label
     for idx, label in enumerate(labels):
 
         if n_most_likely <= 0:
+            # If n_most_likely is not specified, select examples with the matching label
             examples = [ex for ex in original_data if ex.label == label]
             logger.info("There are {} examples for label {}".format(len(examples), label))
             while len(examples) < examples_per_label[idx]:
-                # upsample examples if there are too few
+                # Upsample examples if there are too few
                 examples.extend(ex for ex in original_data if ex.label == label)
         else:
+            # If n_most_likely is specified, select the top-n examples with the highest logits
             examples = [(ex.logits[idx], ex_idx, ex) for ex_idx, ex in enumerate(original_data)]
             examples.sort(reverse=True)
             examples = [ex for score, ex_idx, ex in examples[:n_most_likely]]
@@ -750,15 +793,28 @@ def generate_ipet_train_set(logits_lists: List[LogitsList], labels: List[str], o
                 example.logits = [example.logits[idx]]
                 example.label = label
 
+        # Draw examples based on label probabilities and add them to the test_set
         label_examples = _draw_examples_by_label_probability(
             examples=examples, num_examples=examples_per_label[idx], rng=rng_np)
         test_set.extend(label_examples)
 
+    # Return the generated training set
     return test_set
 
 
 def _draw_examples_by_label_probability(examples: List[InputExample], num_examples: int, rng) -> List[InputExample]:
+    # Calculate label probabilities based on the maximum logits for each example
     label_probabilities = [max(example.logits) for example in examples]
+
+    # Calculate the sum of label probabilities
     sum_label_probabilities = sum(label_probabilities)
+
+    # Normalize label probabilities to ensure they sum up to 1
     label_probabilities = [p / sum_label_probabilities for p in label_probabilities]
-    return rng.choice(examples, size=num_examples, replace=False, p=label_probabilities).tolist()
+
+    # Use a random number generator to select examples based on label probabilities
+    selected_examples = rng.choice(examples, size=num_examples, replace=False, p=label_probabilities)
+
+    # Convert the selected examples to a list and return them
+    return selected_examples.tolist()
+
