@@ -257,6 +257,7 @@ def train_pet(ensemble_model_config: WrapperConfig, ensemble_train_config: Train
     logits = LogitsList.load(logits_file).logits
     assert len(logits) == len(unlabeled_data)
     logger.info("Got {} logits from file {}".format(len(logits), logits_file))
+    # Add logits to unlabeled examples
     for example, example_logits in zip(unlabeled_data, logits):
         example.logits = example_logits
 
