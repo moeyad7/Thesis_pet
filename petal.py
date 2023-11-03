@@ -23,12 +23,14 @@ def filter_words(tokens: List[str], word_counts=None, max_words: int = -1):
     to actual words and occur a given number of times.
     :param tokens: the list of tokens to filter
     :param word_counts: a dictionary mapping words to their number of occurrences
-    :param max_words: if set to a value >0, only the `max_words` most frequent words according to `word_counts` are kept
+    :param max_words: if set to a value > 0, only the `max_words` most frequent words according to `word_counts` are kept
     :return: the filtered list of tokens
     """
-    tokens = (word for word in tokens if word[0] == 'Ġ' and len([char for char in word[1:] if char.isalpha()]) >= 2)
+    tokens = (word for word in tokens if word[0] == 'Ġ' and len(
+        [char for char in word[1:] if char.isalpha()]) >= 2)
     if word_counts and max_words > 0:
-        tokens = sorted(tokens, key=lambda word: word_counts[word[1:]], reverse=True)[:max_words]
+        tokens = sorted(tokens, key=lambda word: word_counts[word[1:]], reverse=True)[
+            :max_words]
     return tokens
 
 
@@ -37,15 +39,18 @@ def get_word_to_id_map(tokenizer: PreTrainedTokenizer, word_counts=None, max_wor
     Return a mapping from all tokens to their internal ids for a given tokenizer
     :param tokenizer: the tokenizer
     :param word_counts: a dictionary mapping words to their number of occurrences
-    :param max_words: if set to a value >0, only the `max_words` most frequent words according to `word_counts` are kept
+    :param max_words: if set to a value > 0, only the `max_words` most frequent words according to `word_counts` are kept
     :return:
     """
     if not isinstance(tokenizer, RobertaTokenizer):
-        raise ValueError("this function currently only supports instances of 'RobertaTokenizer'")
+        raise ValueError(
+            "this function currently only supports instances of 'RobertaTokenizer'")
 
     words = filter_words(tokenizer.encoder.keys(), word_counts, max_words)
-    word2id = {word[1:]: tokenizer.convert_tokens_to_ids(word) for word in words}
-    logger.info(f"There are {len(word2id)} words left after filtering non-word tokens")
+    word2id = {word[1:]: tokenizer.convert_tokens_to_ids(
+        word) for word in words}
+    logger.info(
+        f"There are {len(word2id)} words left after filtering non-word tokens")
     return word2id
 
 
@@ -58,7 +63,8 @@ class AutomaticVerbalizerSearch:
         self.expected = expected
 
         logits_list = [np.exp(logits) for logits in logits_list]
-        self.probs_list = [logits / np.expand_dims(np.sum(logits, axis=1), axis=1) for logits in logits_list]
+        self.probs_list = [
+            logits / np.expand_dims(np.sum(logits, axis=1), axis=1) for logits in logits_list]
 
     def _get_candidates(self, num_candidates: int) -> Dict[str, List[str]]:
         if num_candidates <= 0:
@@ -69,7 +75,8 @@ class AutomaticVerbalizerSearch:
         for label in self.labels:
             for probs in self.probs_list:
                 for word, idx in self.word2idx.items():
-                    score = np.sum(np.log(probs[:, idx]) * self.expected[label])
+                    score = np.sum(
+                        np.log(probs[:, idx]) * self.expected[label])
                     scores[label][word] += score
 
         return {label: [w for w, _ in scores[label].most_common(num_candidates)] for label in self.labels}
@@ -84,19 +91,25 @@ class AutomaticVerbalizerSearch:
                 for word in candidates[label]:
                     idx = self.word2idx[word]
                     if score_fct == 'llr':
-                        scores[label][word] += self.log_likelihood_ratio(probs[:, idx], self.expected[label], normalize)
+                        scores[label][word] += self.log_likelihood_ratio(
+                            probs[:, idx], self.expected[label], normalize)
                     elif score_fct == 'ce':
-                        scores[label][word] += self.cross_entropy(probs[:, idx], self.expected[label], normalize)
+                        scores[label][word] += self.cross_entropy(
+                            probs[:, idx], self.expected[label], normalize)
                     else:
-                        raise ValueError(f"Score function '{score_fct}' not implemented")
+                        raise ValueError(
+                            f"Score function '{score_fct}' not implemented")
 
         return {label: [w for w, _ in scores[label].most_common(words_per_label)] for label in self.labels}
 
     @staticmethod
     def log_likelihood_ratio(predictions: np.ndarray, expected: np.ndarray, normalize: bool) -> float:
         scale_factor = sum(1 - expected) / sum(expected) if normalize else 1
-        pos_score = scale_factor * (np.sum(np.log(predictions) * expected) - np.sum(np.log(1 - predictions) * expected))
-        neg_score = np.sum(np.log(1 - predictions) * (1 - expected)) - np.sum(np.log(predictions) * (1 - expected))
+        pos_score = scale_factor * \
+            (np.sum(np.log(predictions) * expected) -
+             np.sum(np.log(1 - predictions) * expected))
+        neg_score = np.sum(np.log(1 - predictions) * (1 - expected)) - \
+            np.sum(np.log(predictions) * (1 - expected))
         return pos_score + neg_score
 
     @staticmethod
@@ -190,15 +203,19 @@ def main():
     args.wrapper_type = 'mlm'
 
     # get training data
-    train_examples_per_label = eq_div(args.train_examples, len(args.label_list)) if args.train_examples != -1 else -1
-    train_data = load_examples(args.task_name, args.data_dir, set_type=TRAIN_SET, num_examples_per_label=train_examples_per_label)
+    train_examples_per_label = eq_div(args.train_examples, len(
+        args.label_list)) if args.train_examples != -1 else -1
+    train_data = load_examples(args.task_name, args.data_dir,
+                               set_type=TRAIN_SET, num_examples_per_label=train_examples_per_label)
     if args.additional_input_examples:
-        additional_data = InputExample.load_examples(args.additional_input_examples)
+        additional_data = InputExample.load_examples(
+            args.additional_input_examples)
         train_data += additional_data
         logger.info(f"Loaded {len(additional_data)} additional examples from {args.additional_input_examples}, total"
                     f"training set size is now {len(train_data)}")
 
-    expected = {label: np.array([1 if x.label == label else 0 for x in train_data]) for label in args.label_list}
+    expected = {label: np.array(
+        [1 if x.label == label else 0 for x in train_data]) for label in args.label_list}
 
     if args.words_file:
         with open(args.words_file, 'r', encoding='utf8') as fh:
@@ -208,7 +225,8 @@ def main():
 
     tokenizer_class = MODEL_CLASSES[args.model_type]['tokenizer']
     tokenizer = tokenizer_class.from_pretrained(args.model_name_or_path)
-    word2idx = get_word_to_id_map(tokenizer, word_counts=word_counts, max_words=args.max_words)
+    word2idx = get_word_to_id_map(
+        tokenizer, word_counts=word_counts, max_words=args.max_words)
 
     logits = []
 
@@ -224,29 +242,36 @@ def main():
         wrapper.model.to(device)
         # modify all patterns so that they return a single text segment instead of two segments
         get_parts = wrapper.preprocessor.pvp.get_parts
-        wrapper.preprocessor.pvp.get_parts = lambda example: (get_parts(example)[0] + get_parts(example)[1], [])
-        wrapper.preprocessor.pvp.convert_mlm_logits_to_cls_logits = lambda mask, x, _=None: x[mask >= 0]
+        wrapper.preprocessor.pvp.get_parts = lambda example: (
+            get_parts(example)[0] + get_parts(example)[1], [])
+        wrapper.preprocessor.pvp.convert_mlm_logits_to_cls_logits = lambda mask, x, _=None: x[
+            mask >= 0]
 
-        pattern_logits = wrapper.eval(train_data, device, per_gpu_eval_batch_size=args.per_gpu_eval_batch_size, n_gpu=args.n_gpu)['logits']
-        pattern_logits = pattern_logits - np.expand_dims(np.max(pattern_logits, axis=1), axis=1)
+        pattern_logits = wrapper.eval(
+            train_data, device, per_gpu_eval_batch_size=args.per_gpu_eval_batch_size, n_gpu=args.n_gpu)['logits']
+        pattern_logits = pattern_logits - \
+            np.expand_dims(np.max(pattern_logits, axis=1), axis=1)
         logits.append(pattern_logits)
 
     logger.info("Starting verbalizer search...")
 
     if args.combine_patterns:
-        avs = AutomaticVerbalizerSearch(word2idx, args.label_list, logits, expected)
+        avs = AutomaticVerbalizerSearch(
+            word2idx, args.label_list, logits, expected)
         verbalizer = avs.find_verbalizer(
             num_candidates=args.num_candidates,
             words_per_label=args.words_per_label,
             normalize=args.normalize,
             score_fct=args.score_fct
         )
-        verbalizers = {pattern_id: verbalizer for pattern_id in args.pattern_ids}
+        verbalizers = {
+            pattern_id: verbalizer for pattern_id in args.pattern_ids}
 
     else:
         verbalizers = {}
         for idx, pattern_id in enumerate(args.pattern_ids):
-            avs = AutomaticVerbalizerSearch(word2idx, args.label_list, [logits[idx]], expected)
+            avs = AutomaticVerbalizerSearch(
+                word2idx, args.label_list, [logits[idx]], expected)
             verbalizers[pattern_id] = avs.find_verbalizer(
                 num_candidates=args.num_candidates,
                 words_per_label=args.words_per_label,
