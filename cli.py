@@ -17,7 +17,7 @@ one of the supported tasks and datasets.
 
 import argparse
 import os
-from typing import Tuple
+from typing import Tuple, List, Union
 
 import torch
 
@@ -30,26 +30,46 @@ import log
 logger = log.get_logger('root')
 
 
-def load_pet_configs(args) -> Tuple[WrapperConfig, pet.TrainConfig, pet.EvalConfig]:
+def load_pet_configs(args) -> Tuple[Union[WrapperConfig, List[WrapperConfig]], 
+                                    Union[pet.TrainConfig, List[pet.TrainConfig]], 
+                                    Union[pet.EvalConfig, List[pet.EvalConfig]]]:
     """
     Load the model, training and evaluation configs for PET from the given command line arguments.
     """
-    model_cfg = WrapperConfig(model_type=args.model_type, model_name_or_path=args.model_name_or_path,
-                              wrapper_type=args.wrapper_type, task_name=args.task_name, label_list=args.label_list,
-                              max_seq_length=args.pet_max_seq_length, verbalizer_file=args.verbalizer_file,
-                              cache_dir=args.cache_dir)
+    if(type(args.model_type) == str):
+        model_cfg = WrapperConfig(model_type=args.model_type, model_name_or_path=args.model_name_or_path,
+                                wrapper_type=args.wrapper_type, task_name=args.task_name, label_list=args.label_list,
+                                max_seq_length=args.pet_max_seq_length, verbalizer_file=args.verbalizer_file,
+                                cache_dir=args.cache_dir)
 
-    train_cfg = pet.TrainConfig(device=args.device, per_gpu_train_batch_size=args.pet_per_gpu_train_batch_size,
-                                per_gpu_unlabeled_batch_size=args.pet_per_gpu_unlabeled_batch_size, n_gpu=args.n_gpu,
-                                num_train_epochs=args.pet_num_train_epochs, max_steps=args.pet_max_steps,
-                                gradient_accumulation_steps=args.pet_gradient_accumulation_steps,
-                                weight_decay=args.weight_decay, learning_rate=args.learning_rate,
-                                adam_epsilon=args.adam_epsilon, warmup_steps=args.warmup_steps,
-                                max_grad_norm=args.max_grad_norm, lm_training=args.lm_training, alpha=args.alpha)
+        train_cfg = pet.TrainConfig(device=args.device, per_gpu_train_batch_size=args.pet_per_gpu_train_batch_size,
+                                    per_gpu_unlabeled_batch_size=args.pet_per_gpu_unlabeled_batch_size, n_gpu=args.n_gpu,
+                                    num_train_epochs=args.pet_num_train_epochs, max_steps=args.pet_max_steps,
+                                    gradient_accumulation_steps=args.pet_gradient_accumulation_steps,
+                                    weight_decay=args.weight_decay, learning_rate=args.learning_rate,
+                                    adam_epsilon=args.adam_epsilon, warmup_steps=args.warmup_steps,
+                                    max_grad_norm=args.max_grad_norm, lm_training=args.lm_training, alpha=args.alpha)
 
-    eval_cfg = pet.EvalConfig(device=args.device, n_gpu=args.n_gpu, metrics=args.metrics,
-                              per_gpu_eval_batch_size=args.pet_per_gpu_eval_batch_size,
-                              decoding_strategy=args.decoding_strategy, priming=args.priming)
+        eval_cfg = pet.EvalConfig(device=args.device, n_gpu=args.n_gpu, metrics=args.metrics,
+                                per_gpu_eval_batch_size=args.pet_per_gpu_eval_batch_size,
+                                decoding_strategy=args.decoding_strategy, priming=args.priming)
+    else:
+        model_cfg = [WrapperConfig(model_type=args.model_type[i], model_name_or_path=args.model_name_or_path[i],
+                                wrapper_type=args.wrapper_type[i], task_name=args.task_name, label_list=args.label_list,
+                                max_seq_length=args.pet_max_seq_length, verbalizer_file=args.verbalizer_file,
+                                cache_dir=args.cache_dir) for i in range(len(args.model_type))]
+
+        train_cfg = [pet.TrainConfig(device=args.device, per_gpu_train_batch_size=args.pet_per_gpu_train_batch_size,
+                                    per_gpu_unlabeled_batch_size=args.pet_per_gpu_unlabeled_batch_size, n_gpu=args.n_gpu,
+                                    num_train_epochs=args.pet_num_train_epochs, max_steps=args.pet_max_steps,
+                                    gradient_accumulation_steps=args.pet_gradient_accumulation_steps,
+                                    weight_decay=args.weight_decay, learning_rate=args.learning_rate,
+                                    adam_epsilon=args.adam_epsilon, warmup_steps=args.warmup_steps,
+                                    max_grad_norm=args.max_grad_norm, lm_training=args.lm_training, alpha=args.alpha) for i in range(len(args.model_type))]
+
+        eval_cfg = [pet.EvalConfig(device=args.device, n_gpu=args.n_gpu, metrics=args.metrics,
+                                per_gpu_eval_batch_size=args.pet_per_gpu_eval_batch_size,
+                                decoding_strategy=args.decoding_strategy, priming=args.priming) for i in range(len(args.model_type))]
 
     return model_cfg, train_cfg, eval_cfg
 
@@ -97,9 +117,9 @@ def main():
                         help="The training method to use. Either regular sequence classification, PET or iPET.")
     parser.add_argument("--data_dir", default=None, type=str, required=True,
                         help="The input data dir. Should contain the data files for the task.")
-    parser.add_argument("--model_type", default=None, type=str, required=True, choices=MODEL_CLASSES.keys(),
+    parser.add_argument("--model_type", default=None, type=str, nargs='*', required=True, choices=MODEL_CLASSES.keys(),
                         help="The type of the pretrained language model to use")
-    parser.add_argument("--model_name_or_path", default=None, type=str, required=True,
+    parser.add_argument("--model_name_or_path", default=None, type=str, nargs='*', required=True,
                         help="Path to the pre-trained model or shortcut name")
     parser.add_argument("--task_name", default=None, type=str, required=True, choices=PROCESSORS.keys(),
                         help="The name of the task to train/evaluate on")
@@ -107,7 +127,7 @@ def main():
                         help="The output directory where the model predictions and checkpoints will be written")
 
     # PET-specific optional parameters
-    parser.add_argument("--wrapper_type", default="mlm", choices=WRAPPER_TYPES,
+    parser.add_argument("--wrapper_type", default="mlm", nargs='*', choices=WRAPPER_TYPES,
                         help="The wrapper type. Set this to 'mlm' for a masked language model like BERT or to 'plm' "
                              "for a permuted language model like XLNet (only for PET)")
     parser.add_argument("--pattern_ids", default=[0], type=int, nargs='+',
@@ -248,6 +268,9 @@ def main():
         train_ex, test_ex = None, None
 
     eval_set = TEST_SET if args.eval_set == 'test' else DEV_SET
+    
+    if len(args.model_type) > 1 and type(args.wrapper_type) == str:
+        args.wrapper_type = [args.wrapper_type] * len(args.model_type)
 
     # Load train, eval and unlabeled data
     train_data = load_examples(
