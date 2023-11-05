@@ -5,3 +5,4 @@
 4. Different training sizes
 5. Different training epochs
 6. Different max sequence lengths
+7. Different Learning Rates
