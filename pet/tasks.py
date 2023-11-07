@@ -829,7 +829,8 @@ TASK_HELPERS = {
 # Dictionary mapping task names to the list of evaluation metrics used for each task
 METRICS = {
     "cb": ["acc", "f1-macro"],    
-    "multirc": ["acc", "f1", "em"]
+    "multirc": ["acc", "f1", "em"],
+    'ar-en-sa': ['acc', 'f1-macro','precision-macro','recall-macro'],
 }
 
 DEFAULT_METRICS = ["acc"]
