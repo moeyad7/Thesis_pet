@@ -4,7 +4,7 @@
 target_dir="$(pwd)/output"
 
 # Specify the file names you want to delete
-file_names=("eval_logits.txt" "logits.txt" "predictions.jsonl" "pytorch_model.bin" "spiece.model" "unlabeled_logits.txt")
+file_names=("eval_logits.txt" "logits.txt" "predictions.jsonl" "pytorch_model.bin" "spiece.model" "unlabeled_logits.txt" "vocab.json" "special_tokens_map.json" "tokenizer_config.json" "merges.txt")
 
 # Loop through each file name and delete matching files in the target directory and its subdirectories
 for file_name in "${file_names[@]}"; do
