@@ -14,6 +14,7 @@ import json
 import os
 import random
 import statistics
+import math
 from abc import ABC
 from collections import defaultdict
 from copy import deepcopy
@@ -348,7 +349,7 @@ def train_pet_ensemble(model_config: Union[WrapperConfig, List[WrapperConfig]], 
             if not os.path.exists(pattern_iter_output_dir):
                 os.makedirs(pattern_iter_output_dir)
 
-            if type(train_config) == list:
+            if type(model_config) == list:
                 wrapper = init_model(model_config[pattern_id])  # Initialize the model
             else:
                 wrapper = init_model(model_config)
@@ -366,7 +367,12 @@ def train_pet_ensemble(model_config: Union[WrapperConfig, List[WrapperConfig]], 
                     ipet_train_data = None
 
                 # Train the model
-                results_dict.update(train_single_model(wrapper, train_data, train_config[pattern_id], eval_config[pattern_id],
+                if(type(model_config) == list):
+                    results_dict.update(train_single_model(wrapper, train_data, train_config[pattern_id], eval_config[pattern_id],
+                                                       ipet_train_data=ipet_train_data,
+                                                       unlabeled_data=unlabeled_data))
+                else:
+                    results_dict.update(train_single_model(wrapper, train_data, train_config, eval_config,
                                                        ipet_train_data=ipet_train_data,
                                                        unlabeled_data=unlabeled_data))
 
@@ -376,15 +382,26 @@ def train_pet_ensemble(model_config: Union[WrapperConfig, List[WrapperConfig]], 
                 logger.info("Saving trained model at {}...".format(
                     pattern_iter_output_dir))
                 wrapper.save(pattern_iter_output_dir)
-                train_config[pattern_id].save(os.path.join(
-                    pattern_iter_output_dir, 'train_config.json'))
-                eval_config[pattern_id].save(os.path.join(
-                    pattern_iter_output_dir, 'eval_config.json'))
+                if(type(model_config) == list):
+                    train_config[pattern_id].save(os.path.join(
+                        pattern_iter_output_dir, 'train_config.json'))
+                    eval_config[pattern_id].save(os.path.join(
+                        pattern_iter_output_dir, 'eval_config.json'))
+                else:
+                    train_config.save(os.path.join(
+                        pattern_iter_output_dir, 'train_config.json'))
+                    eval_config.save(os.path.join(
+                        pattern_iter_output_dir, 'eval_config.json'))
+
                 logger.info("Saving complete")
 
                 if save_unlabeled_logits:
-                    logits = evaluate(wrapper, unlabeled_data,
-                                      eval_config[pattern_id])['logits']
+                    if (type(model_config)==list):
+                        logits = evaluate(wrapper, unlabeled_data,
+                                          eval_config[pattern_id])['logits']
+                    else:
+                        logits = evaluate(wrapper, unlabeled_data,
+                                          eval_config)['logits']
                     save_logits(os.path.join(
                         pattern_iter_output_dir, 'logits.txt'), logits)
 
@@ -400,8 +417,12 @@ def train_pet_ensemble(model_config: Union[WrapperConfig, List[WrapperConfig]], 
                     wrapper = TransformerModelWrapper.from_pretrained(
                         pattern_iter_output_dir)
 
-                eval_result = evaluate(
-                    wrapper, eval_data, eval_config[pattern_id], priming_data=train_data)
+                if(type(model_config) == list):
+                    eval_result = evaluate(
+                        wrapper, eval_data, eval_config[pattern_id], priming_data=train_data)
+                else:
+                    eval_result = evaluate(
+                        wrapper, eval_data, eval_config, priming_data=train_data)
 
                 save_predictions(os.path.join(
                     pattern_iter_output_dir, 'predictions.jsonl'), wrapper, eval_result)
@@ -486,14 +507,15 @@ def train_single_model(model: TransformerModelWrapper, train_data: List[InputExa
             temperature=config.temperature
         )
         results_dict['global_step'] = global_step
-        results_dict['average_loss'] = tr_loss
+        if(math.isnan(tr_loss)):
+            results_dict['average_loss'] = None
+        else:
+            results_dict['average_loss'] = tr_loss
 
     if train_data and return_train_set_results:
         # Evaluate the model on the train set after training and store the accuracy
-        print("hello")
         results_dict['train_set_after_training'] = evaluate(
             model, train_data, eval_config)['scores']['acc']
-        print("hello again")
 
     return results_dict
 
@@ -512,7 +534,6 @@ def evaluate(model: TransformerModelWrapper, eval_data: List[InputExample], conf
 
     # If priming is enabled, add priming data to each evaluation example
     if config.priming:
-        print("Iam here")
         for example in eval_data:
             example.meta['priming_data'] = priming_data
 

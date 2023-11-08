@@ -36,9 +36,9 @@ def load_pet_configs(args) -> Tuple[Union[WrapperConfig, List[WrapperConfig]],
     """
     Load the model, training and evaluation configs for PET from the given command line arguments.
     """
-    if(type(args.model_type) == str):
-        model_cfg = WrapperConfig(model_type=args.model_type, model_name_or_path=args.model_name_or_path,
-                                wrapper_type=args.wrapper_type, task_name=args.task_name, label_list=args.label_list,
+    if not (len(args.model_type) > 1):
+        model_cfg = WrapperConfig(model_type=args.model_type[0], model_name_or_path=args.model_name_or_path[0],
+                                wrapper_type=args.wrapper_type[0], task_name=args.task_name, label_list=args.label_list,
                                 max_seq_length=args.pet_max_seq_length, verbalizer_file=args.verbalizer_file,
                                 cache_dir=args.cache_dir)
 
@@ -79,10 +79,17 @@ def load_sequence_classifier_configs(args) -> Tuple[WrapperConfig, pet.TrainConf
     Load the model, training and evaluation configs for a regular sequence classifier from the given command line
     arguments. This classifier can either be used as a standalone model or as the final classifier for PET/iPET.
     """
-    model_cfg = WrapperConfig(model_type=args.model_type, model_name_or_path=args.model_name_or_path,
-                              wrapper_type=SEQUENCE_CLASSIFIER_WRAPPER, task_name=args.task_name,
-                              label_list=args.label_list, max_seq_length=args.sc_max_seq_length,
-                              verbalizer_file=args.verbalizer_file, cache_dir=args.cache_dir)
+    if args.sc_final_model_index >= 0:
+        model_cfg = WrapperConfig(model_type=args.model_type[args.sc_final_model_index],
+                                  model_name_or_path=args.model_name_or_path[args.sc_final_model_index],
+                                  wrapper_type=SEQUENCE_CLASSIFIER_WRAPPER, task_name=args.task_name,
+                                  label_list=args.label_list, max_seq_length=args.sc_max_seq_length,
+                                  verbalizer_file=args.verbalizer_file, cache_dir=args.cache_dir)
+    else: 
+        model_cfg = WrapperConfig(model_type=args.model_type[0], model_name_or_path=args.model_name_or_path[0],
+                                  wrapper_type=SEQUENCE_CLASSIFIER_WRAPPER, task_name=args.task_name,
+                                  label_list=args.label_list, max_seq_length=args.sc_max_seq_length,
+                                  verbalizer_file=args.verbalizer_file, cache_dir=args.cache_dir)
 
     train_cfg = pet.TrainConfig(device=args.device, per_gpu_train_batch_size=args.sc_per_gpu_train_batch_size,
                                 per_gpu_unlabeled_batch_size=args.sc_per_gpu_unlabeled_batch_size, n_gpu=args.n_gpu,
@@ -185,6 +192,8 @@ def main():
     parser.add_argument("--sc_max_steps", default=-1, type=int,
                         help="If > 0: set total number of training steps to perform for sequence classifier training. "
                              "Override num_train_epochs.")
+    parser.add_argument("--sc_final_model_index", default=-1, type=int,
+                        help="If >= 0, the index of the final model to use for evaluation. If < 0, use the first model.")
 
     # iPET-specific optional parameters
     parser.add_argument("--ipet_generations", default=3, type=int,
@@ -249,6 +258,8 @@ def main():
     args.device = "cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu"
     args.n_gpu = torch.cuda.device_count()
 
+    assert len(args.model_type) == len(args.model_name_or_path)
+
     # Prepare task
     args.task_name = args.task_name.lower()
     if args.task_name not in PROCESSORS:  # Check if the task is supported
@@ -269,9 +280,7 @@ def main():
 
     eval_set = TEST_SET if args.eval_set == 'test' else DEV_SET
     
-    if len(args.model_type) > 1 and type(args.wrapper_type) == str:
-        args.wrapper_type = [args.wrapper_type] * len(args.model_type)
-
+    args.wrapper_type = [args.wrapper_type] * len(args.model_type)   
     # Load train, eval and unlabeled data
     train_data = load_examples(
         args.task_name, args.data_dir, TRAIN_SET, num_examples=train_ex, num_examples_per_label=train_ex_per_label)
