@@ -353,15 +353,9 @@ class AgnewsPVP(PVP):
 
 
 class ArEnSAPVP(PVP):
-    VERBALIZER_A = {
+    VERBALIZER = {
         "positive": ["Positive"],
         "negative": ["Negative"],
-        "neutral": ["Maybe"],
-    }
-    
-    VERBALIZER_B = {
-        "positive": ["Good"],
-        "negative": ["Bad"],
         "neutral": ["Maybe"],
     }
     
@@ -377,9 +371,7 @@ class ArEnSAPVP(PVP):
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
         
     def verbalize(self, label) -> List[str]:
-        if(self.pattern_id == 1):
-            return ArEnSAPVP.VERBALIZER_B[label]
-        return ArEnSAPVP.VERBALIZER_A[label]
+        return ArEnSAPVP.VERBALIZER[label]
 
 class YahooPVP(PVP):
     VERBALIZER = {
