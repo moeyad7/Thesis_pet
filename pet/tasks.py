@@ -38,7 +38,7 @@ def _shuffle_and_restrict(examples: List[InputExample], num_examples: int, seed:
     :param seed: the random seed for shuffling
     :return: the first ``num_examples`` elements of the shuffled list
     """
-    if 0 < num_examples < len(examples):
+    if 0 <= num_examples < len(examples):
         random.Random(seed).shuffle(examples)
         examples = examples[:num_examples]
     return examples
