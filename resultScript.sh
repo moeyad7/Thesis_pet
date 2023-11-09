@@ -114,5 +114,3 @@ fi
 echo "\"${combined_f1[@]}\",\"${combined_precision[@]}\",\"${combined_recall[@]}\",\"${combined_acc[@]}\",\"${combined_metrics["f1-all"]}\",\"${combined_metrics["precision-all"]}\",\"${combined_metrics["recall-all"]}\",\"${combined_metrics["acc-all"]}\",\"${combined_metrics["final-f1"]}\",\"${combined_metrics["final-precision"]}\",\"${combined_metrics["final-recall"]}\",\"${combined_metrics["final-acc"]}\"" >> "$output_csv"
 
 echo "Results saved to $output_csv"
-
-echo ${combined_metrics["final-acc"]}
