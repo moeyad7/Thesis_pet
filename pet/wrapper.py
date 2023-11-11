@@ -158,7 +158,12 @@ class TransformerModelWrapper:
         
         # if the model is a gpt2 model, we need to change the padding and mask tokens
         if self.config.model_type == 'gpt2':
+            self.tokenizer = tokenizer_class.from_pretrained(
+            config.model_name_or_path,
+            pad_token='[PAD]',
+            cache_dir=config.cache_dir if config.cache_dir else None)
             self.tokenizer.pad_token, self.tokenizer.mask_token = self.tokenizer.eos_token, self.tokenizer.eos_token
+            
 
         self.model = model_class.from_pretrained(config.model_name_or_path, config=model_config,
                                                  cache_dir=config.cache_dir if config.cache_dir else None)
