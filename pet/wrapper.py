@@ -241,6 +241,9 @@ class TransformerModelWrapper:
         """
         # Load the training data
         # RandomSampler(train_dataset) returns indices of the examples in a random order 
+        if(len(task_train_data) == 0):
+            print("No training data")
+            return 0, 0
         train_batch_size = per_gpu_train_batch_size * max(1, n_gpu)
         train_dataset = self._generate_dataset(task_train_data)
         train_sampler = RandomSampler(train_dataset)

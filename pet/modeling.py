@@ -149,8 +149,8 @@ def init_model(config: WrapperConfig) -> TransformerModelWrapper:
     return models
 
 
-def train_ipet(ensemble_model_config: WrapperConfig, ensemble_train_config: TrainConfig,
-               ensemble_eval_config: EvalConfig, ipet_config: IPetConfig, final_model_config: WrapperConfig,
+def train_ipet(ensemble_model_config: Union[WrapperConfig, List[WrapperConfig]], ensemble_train_config: Union[TrainConfig, List[TrainConfig]],
+               ensemble_eval_config: Union[EvalConfig, List[EvalConfig]], ipet_config: IPetConfig, final_model_config: WrapperConfig,
                final_train_config: TrainConfig, final_eval_config: EvalConfig, pattern_ids: List[int], output_dir: str,
                ensemble_repetitions: int = 3, final_repetitions: int = 1, reduction: str = 'wmean',
                train_data: List[InputExample] = None, unlabeled_data: List[InputExample] = None,
@@ -831,7 +831,6 @@ def generate_ipet_train_set(logits_lists: List[LogitsList], labels: List[str], o
     # Extract the logits and weights from the selected lists
     logits = np.array([ll.logits for ll in logits_lists])  # Extract the logits
     weights = np.array([ll.score for ll in logits_lists])  # Extract the scores (or weights)
-
 
     # Reduce logits using the specified reduction strategy ('mean' or 'wmean')
     if reduction == 'mean':
