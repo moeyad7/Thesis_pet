@@ -164,7 +164,8 @@ class TransformerModelWrapper:
         self.model = model_class.from_pretrained(config.model_name_or_path, config=model_config,
                                                  cache_dir=config.cache_dir if config.cache_dir else None)
         
-        self.model.config.pad_token_id = self.tokenizer.pad_token_id
+        if self.config.model_type == 'gpt2':
+            self.model.config.pad_token_id = self.tokenizer.pad_token_id
 
         #Multi GPU Training
         n_gpus = torch.cuda.device_count()
