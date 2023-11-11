@@ -29,7 +29,7 @@ from transformers import InputExample, AdamW, get_linear_schedule_with_warmup, P
     XLNetLMHeadModel, BertConfig, BertForSequenceClassification, BertTokenizer, RobertaConfig, \
     RobertaForSequenceClassification, RobertaTokenizer, XLMRobertaConfig, XLMRobertaForSequenceClassification, \
     XLMRobertaTokenizer, AlbertForSequenceClassification, AlbertForMaskedLM, AlbertTokenizer, AlbertConfig, \
-    GPT2Config, GPT2LMHeadModel, GPT2Tokenizer
+    GPT2Config, GPT2LMHeadModel, GPT2Tokenizer, GPT2ForSequenceClassification
 from transformers import __version__ as transformers_version
 
 import log
@@ -88,6 +88,7 @@ MODEL_CLASSES = {
     'gpt2': {
         'config': GPT2Config,
         'tokenizer': GPT2Tokenizer,
+        SEQUENCE_CLASSIFIER_WRAPPER: GPT2ForSequenceClassification,
         MLM_WRAPPER: GPT2LMHeadModel
     },
 }
