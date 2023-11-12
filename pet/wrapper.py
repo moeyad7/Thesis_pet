@@ -29,7 +29,8 @@ from transformers import InputExample, AdamW, get_linear_schedule_with_warmup, P
     XLNetLMHeadModel, BertConfig, BertForSequenceClassification, BertTokenizer, RobertaConfig, \
     RobertaForSequenceClassification, RobertaTokenizer, XLMRobertaConfig, XLMRobertaForSequenceClassification, \
     XLMRobertaTokenizer, AlbertForSequenceClassification, AlbertForMaskedLM, AlbertTokenizer, AlbertConfig, \
-    GPT2Config, GPT2LMHeadModel, GPT2Tokenizer, GPT2ForSequenceClassification
+    GPT2Config, GPT2LMHeadModel, GPT2Tokenizer, GPT2ForSequenceClassification, AutoConfig, AutoTokenizer, AutoModelForSequenceClassification,\
+    AutoModelForMaskedLM
 from transformers import __version__ as transformers_version
 
 import log
@@ -91,6 +92,12 @@ MODEL_CLASSES = {
         SEQUENCE_CLASSIFIER_WRAPPER: GPT2ForSequenceClassification,
         MLM_WRAPPER: GPT2LMHeadModel
     },
+    'arabert':{
+        'config': AutoConfig,
+        'tokenizer': AutoTokenizer,
+        SEQUENCE_CLASSIFIER_WRAPPER: AutoModelForSequenceClassification,
+        MLM_WRAPPER: AutoModelForMaskedLM
+    }
 }
 
 # Dictionary mapping model wrappers to evaluation step functions

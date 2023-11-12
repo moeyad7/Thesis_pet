@@ -358,6 +358,11 @@ class ArEnSAPVP(PVP):
         "negative": ["Negative"],
         "neutral": ["Maybe"],
     }
+    ARABICVERBALIZER = {
+        "positive": ["ايجابي"],
+        "negative": ["سلبي"],
+        "neutral": ["ربما"],
+    }
     
     def get_parts(self, example: InputExample) -> FilledPattern:
         text_a = self.shortenable(example.text_a)
@@ -371,7 +376,7 @@ class ArEnSAPVP(PVP):
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
         
     def verbalize(self, label) -> List[str]:
-        return ArEnSAPVP.VERBALIZER[label]
+        return ArEnSAPVP.ARABICVERBALIZER[label]
 
 class YahooPVP(PVP):
     VERBALIZER = {
