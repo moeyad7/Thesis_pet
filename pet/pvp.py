@@ -371,7 +371,7 @@ class ArEnSAPVP(PVP):
         elif self.pattern_id == 1:
             return [self.mask,'-',text_a], []
         elif self.pattern_id == 2:
-            return [self.mask, 'thoughts: ', text_a], []
+           return [text_a,'(',self.mask,')'], []
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
         
