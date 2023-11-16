@@ -770,4 +770,5 @@ PVPS = {
     'ax-b': RtePVP,
     'ax-g': RtePVP,
     'ar-en-sa': ArEnSAPVP,
+    'ar-ner-corp': ANERcorpPVP,
 }
