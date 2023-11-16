@@ -379,6 +379,48 @@ class ArEnSAPVP(PVP):
     def verbalize(self, label) -> List[str]:
         return ArEnSAPVP.ARABICVERBALIZER[label]
 
+class ANERcorpPVP(PVP):
+    VERBALIZER = {
+    'O': 'Other',
+    'B-LOC': 'Begin Location',
+    'I-LOC': 'Inside Location',
+    'B-ORG': 'Begin Organization',
+    'B-PERS': 'Begin Person',
+    'I-PERS': 'Inside Person',
+    'B-MISC': 'Begin Miscellaneous',
+    'I-ORG': 'Inside Organization',
+    'I-MISC': 'Inside Miscellaneous',
+    }
+
+    ARABICVERBALIZER = {
+    'O': 'آخر',
+    'B-LOC': 'بداية الموقع',
+    'I-LOC': 'داخل الموقع',
+    'B-ORG': 'بداية المؤسسة',
+    'B-PERS': 'بداية الشخص',
+    'I-PERS': 'داخل الشخص',
+    'B-MISC': 'بداية متنوعة',
+    'I-ORG': 'داخل المؤسسة',
+    'I-MISC': 'داخل متنوعة',
+    }
+    
+           
+    def get_parts(self, example: InputExample) -> FilledPattern:
+        text_a = self.shortenable(example.text_a)
+        if self.pattern_id == 0:
+            return [self.mask,':',text_a], []
+        elif self.pattern_id == 1:
+            return [self.mask,'-',text_a], []
+        elif self.pattern_id == 2:
+           return [text_a,'(',self.mask,')'], []
+        else:
+            raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
+        
+    def verbalize(self, label) -> List[str]:
+        return ANERcorpPVP.ARABICVERBALIZER[label]
+
+
+
 class YahooPVP(PVP):
     VERBALIZER = {
         "1": ["Society"],

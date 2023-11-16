@@ -244,6 +244,41 @@ class ArEnSAProcessor(DataProcessor):
                 examples.append(example)
 
         return examples
+    
+class ANERcorpProcessor(DataProcessor):
+    """Processor for the Arabic NER dataset"""
+    
+    def get_train_examples(self, data_dir) -> List[InputExample]:
+        return self._create_examples(os.path.join(data_dir, "train.csv"), "train")
+    
+    def get_dev_examples(self, data_dir) -> List[InputExample]:
+        return self._create_examples(os.path.join(data_dir, "dev.csv"), "dev")
+    
+    def get_test_examples(self, data_dir) -> List[InputExample]:
+        return self._create_examples(os.path.join(data_dir, "test.csv"), "test")
+    
+    def get_unlabeled_examples(self, data_dir) -> List[InputExample]:
+        return self.get_train_examples(data_dir)
+    
+    def get_labels(self) -> List[str]:
+        return ['O', 'B-LOC', 'I-LOC', 'B-ORG', 'B-PERS', 'I-PERS', 'B-MISC', 'I-ORG', 'I-MISC']
+    
+    @staticmethod
+    def _create_examples(path: str, set_type: str) -> List[InputExample]:
+        examples = []
+        
+        with open(path,'r',encoding='utf-8') as f:
+            reader = csv.reader(f, delimiter=',')
+            for idx, row in enumerate(reader):
+                body,label = row
+                guid = "%s-%s" % (set_type, idx)
+                text_a = body.replace('\\', ' ')
+
+                example = InputExample(guid=guid, text_a=text_a, label=label)
+                examples.append(example)
+
+        return examples
+    
 class YahooAnswersProcessor(DataProcessor):
     """Processor for the Yahoo Answers data set."""
 
@@ -815,7 +850,8 @@ PROCESSORS = {
     "record": RecordProcessor,
     "ax-g": AxGProcessor,
     "ax-b": AxBProcessor,
-    "ar-en-sa": ArEnSAProcessor
+    "ar-en-sa": ArEnSAProcessor,
+    "ar-ner-corp": ANERcorpProcessor
 }  # type: Dict[str,Callable[[],DataProcessor]]
 
 # Dictionary mapping task names to their corresponding task helper classes
