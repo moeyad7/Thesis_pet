@@ -97,6 +97,12 @@ MODEL_CLASSES = {
         'tokenizer': AutoTokenizer,
         SEQUENCE_CLASSIFIER_WRAPPER: AutoModelForSequenceClassification,
         MLM_WRAPPER: AutoModelForMaskedLM
+    },
+    'kermit':{
+        'config': AutoConfig,
+        'tokenizer': AutoTokenizer,
+        'sequence_classifier': AutoModelForSequenceClassification,
+        'mlm': AutoModelForMaskedLM
     }
 }
 
@@ -219,6 +225,12 @@ class TransformerModelWrapper:
 
     @staticmethod
     def _load_config(path: str) -> WrapperConfig:
+        print('hi')
+        if not os.path.exists(os.path.join(path, CONFIG_NAME)):
+            print(os.path.join(path, 'config.json'))
+            with open(os.path.join(path, 'config.json'), 'r') as f:
+                return jsonpickle.decode(f.read())
+        
         with open(os.path.join(path, CONFIG_NAME), 'r') as f:
             return jsonpickle.decode(f.read())
 

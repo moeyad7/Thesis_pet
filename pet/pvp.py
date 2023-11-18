@@ -393,7 +393,7 @@ class ANERcorpPVP(PVP):
     }
 
     ARABICVERBALIZER = {
-    'O': 'آخر',
+    'O': 'غير مذكور',
     'B-LOC': 'بداية الموقع',
     'I-LOC': 'داخل الموقع',
     'B-ORG': 'بداية المؤسسة',
@@ -403,8 +403,7 @@ class ANERcorpPVP(PVP):
     'I-ORG': 'داخل المؤسسة',
     'I-MISC': 'داخل متنوعة',
     }
-    
-           
+         
     def get_parts(self, example: InputExample) -> FilledPattern:
         text_a = self.shortenable(example.text_a)
         if self.pattern_id == 0:
