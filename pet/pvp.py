@@ -377,7 +377,7 @@ class ArEnSAPVP(PVP):
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
         
     def verbalize(self, label) -> List[str]:
-        return ArEnSAPVP.ARABICVERBALIZER[label]
+        return ArEnSAPVP.VERBALIZER[label]
 
 class ANERcorpPVP(PVP):
     VERBALIZER = {
