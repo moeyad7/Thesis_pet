@@ -407,7 +407,8 @@ class ANERcorpPVP(PVP):
     def get_parts(self, example: InputExample) -> FilledPattern:
         text_a = self.shortenable(example.text_a)
         if self.pattern_id == 0:
-            return [self.mask * 3,':',text_a], []
+            # return [self.mask * 3,':',text_a], []
+            return [self.mask * 3,'هذه الكلمة في',self.text_a],[]
         elif self.pattern_id == 1:
             return [self.mask,'-',text_a], []
         elif self.pattern_id == 2:
