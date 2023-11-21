@@ -870,6 +870,7 @@ METRICS = {
     "cb": ["acc", "f1-macro"],    
     "multirc": ["acc", "f1", "em"],
     'ar-en-sa': ['acc', 'f1-macro','precision-macro','recall-macro'],
+    'ar-ner-corp': ['acc', 'f1-macro','precision-macro','recall-macro'],
 }
 
 DEFAULT_METRICS = ["acc"]
