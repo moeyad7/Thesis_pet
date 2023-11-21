@@ -738,7 +738,7 @@ class RecordTaskHelper(TaskHelper):
 
         feature_dict['question_idx'] = torch.tensor([f.meta['question_idx'] for f in features], dtype=torch.long)
 
-class ArabicNERTaskHelper(MultiMaskTaskHelper):
+class ArabicNERTaskHelper(TaskHelper):
     """A custom task helper for the ArabicNER dataset."""
 
     def get_sequence_classifier_inputs(self, example: InputExample) -> Dict[str, Any]:

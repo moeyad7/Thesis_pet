@@ -380,18 +380,7 @@ class ArEnSAPVP(PVP):
         return ArEnSAPVP.VERBALIZER[label]
 
 class ANERcorpPVP(PVP):
-    VERBALIZER = {
-    'O': 'Other',
-    'B-LOC': 'Begin Location',
-    'I-LOC': 'Inside Location',
-    'B-ORG': 'Begin Organization',
-    'B-PERS': 'Begin Person',
-    'I-PERS': 'Inside Person',
-    'B-MISC': 'Begin Miscellaneous',
-    'I-ORG': 'Inside Organization',
-    'I-MISC': 'Inside Miscellaneous',
-    }
-
+    
     ARABICVERBALIZER = {
     'O': 'غير مذكور',
     'B-LOC': 'بداية الموقع',
@@ -422,13 +411,13 @@ class ANERcorpPVP(PVP):
         
         
         if self.pattern_id == 0:
-            return [self.mask,' ',text_b,' ',text_a], []
+            return [self.mask * 3,' هي',text_b,'كلمة ',text_a], []
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
         
         
     def verbalize(self, label) -> List[str]:
-        return ANERcorpPVP.SAMEVERBALIZER[label]
+        return ANERcorpPVP.ARABICVERBALIZER[label]
 
 class YahooPVP(PVP):
     VERBALIZER = {
