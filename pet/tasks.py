@@ -267,17 +267,19 @@ class ANERcorpProcessor(DataProcessor):
     def _create_examples(path: str, set_type: str) -> List[InputExample]:
         examples = []
         
-        with open(path,'r',encoding='utf-8') as f:
+        with open(path, encoding='utf8') as f:
             reader = csv.reader(f, delimiter=',')
             for idx, row in enumerate(reader):
-                body,label = row
+                label, word, body = row
                 guid = "%s-%s" % (set_type, idx)
-                text_a = body.replace('\\', ' ')
+                text_a = body.replace('\\n', ' ').replace('\\', ' ')
+                text_b = word.replace('\\n', ' ').replace('\\', ' ')
 
-                example = InputExample(guid=guid, text_a=text_a, label=label)
+                example = InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label)
                 examples.append(example)
 
         return examples
+        
     
 class YahooAnswersProcessor(DataProcessor):
     """Processor for the Yahoo Answers data set."""
