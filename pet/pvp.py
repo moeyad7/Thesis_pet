@@ -408,8 +408,9 @@ class ANERcorpPVP(PVP):
         text_a = self.shortenable(example.text_a)
         text_b = example.text_b
         
+        
         if self.pattern_id == 0:
-            return [self.mask,':',text_a,text_b], []
+            return [self.mask * 3,':',text_a,text_b], []
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
         
