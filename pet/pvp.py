@@ -403,6 +403,18 @@ class ANERcorpPVP(PVP):
     'I-ORG': 'داخل المؤسسة',
     'I-MISC': 'داخل متنوعة',
     }
+    
+    SAMEVERBALIZER = {
+    'O': 'O',
+    'B-LOC': 'B-LOC',
+    'I-LOC': 'I-LOC',
+    'B-ORG': 'B-ORG',
+    'B-PERS': 'B-PERS',
+    'I-PERS': 'I-PERS',
+    'B-MISC': 'B-MISC',
+    'I-ORG': 'I-ORG',
+    'I-MISC': 'I-MISC',
+    }
          
     def get_parts(self, example: InputExample) -> FilledPattern:
         text_a = self.shortenable(example.text_a)
@@ -410,13 +422,13 @@ class ANERcorpPVP(PVP):
         
         
         if self.pattern_id == 0:
-            return [text_b,self.mask * 3,':',text_a], []
+            return [self.mask,' ',text_b,' ',text_a], []
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
         
         
     def verbalize(self, label) -> List[str]:
-        return ANERcorpPVP.ARABICVERBALIZER[label]
+        return ANERcorpPVP.SAMEVERBALIZER[label]
 
 class YahooPVP(PVP):
     VERBALIZER = {
