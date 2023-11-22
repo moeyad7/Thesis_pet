@@ -862,7 +862,7 @@ TASK_HELPERS = {
     "multirc": task_helpers.MultiRcTaskHelper,
     "copa": task_helpers.CopaTaskHelper,
     "record": task_helpers.RecordTaskHelper,
-    # 'ar-ner-corp': task_helpers.ArabicNERTaskHelper,
+    'ar-ner-corp': task_helpers.ArabicNERTaskHelper,
 }
 
 # Dictionary mapping task names to the list of evaluation metrics used for each task
