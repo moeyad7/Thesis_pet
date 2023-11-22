@@ -409,7 +409,7 @@ class ANERcorpPVP(PVP):
         text_a = self.shortenable(example.text_a)
         text_b = example.text_b
         
-        num_masks = max(len(get_verbalization_ids(c, self.wrapper.tokenizer, False)) for c in ARABICVERBALIZER.values())
+        num_masks = max(len(get_verbalization_ids(c, self.wrapper.tokenizer, False)) for c in ANERcorpPVP.ARABICVERBALIZER.values())
         
         if self.pattern_id == 0:
             return ['(',text_a,')',' ',text_b,' ',self.mask * num_masks], []
