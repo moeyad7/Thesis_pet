@@ -411,7 +411,7 @@ class ANERcorpPVP(PVP):
         
         
         if self.pattern_id == 0:
-            return [self.mask * 3,' هي',text_b,'كلمة ',text_a], []
+            return [self.mask *3,' ',text_a,'. كلمة ',text_b,' هي؟ '], []
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
         
