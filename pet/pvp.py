@@ -411,13 +411,13 @@ class ANERcorpPVP(PVP):
         
         
         if self.pattern_id == 0:
-            return [text_a,'. كلمة ',text_b,' هي؟ ',' ',self.mask * 3], []
+            return [text_a,'. كلمة ',text_b,' هي؟ ',' ',self.mask], []
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
         
         
     def verbalize(self, label) -> List[str]:
-        return ANERcorpPVP.ARABICVERBALIZER[label]
+        return ANERcorpPVP.SAMEVERBALIZER[label]
 
 class YahooPVP(PVP):
     VERBALIZER = {
