@@ -742,7 +742,7 @@ class ArabicNERTaskHelper(MultiMaskTaskHelper):
     """A custom task helper for the ArabicNER dataset."""
 
     def get_sequence_classifier_inputs(self, example: InputExample) -> Dict[str, Any]:
-        text_a = example.text_a
+        # text_a = example.text_a
         text_b = example.text_b
-        return self.wrapper.tokenizer.encode_plus(text_a, text_b,add_special_tokens=True,
+        return self.wrapper.tokenizer.encode_plus(text_b,add_special_tokens=True,
                                                   max_length=self.wrapper.config.max_seq_length)    
