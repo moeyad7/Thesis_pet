@@ -382,7 +382,7 @@ class ArEnSAPVP(PVP):
 class ANERcorpPVP(PVP):
     
     ARABICVERBALIZER = {
-    'O': 'غير مذكور',
+    'O': 'غير مذكورة',
     'B-LOC': 'بداية الموقع',
     'I-LOC': 'داخل الموقع',
     'B-ORG': 'بداية المؤسسة',
@@ -411,7 +411,7 @@ class ANERcorpPVP(PVP):
         
         
         if self.pattern_id == 0:
-            return [self.mask *3,' ',text_a,'. كلمة ',text_b,' هي؟ '], []
+            return [text_a,'. كلمة ',text_b,' هي؟ ',' ',self.mask * 3], []
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
         
