@@ -382,37 +382,30 @@ class ArEnSAPVP(PVP):
 class ANERcorpPVP(PVP):
     
     ARABICVERBALIZER = {
-    'O': 'غير مذكورة',
-    'B-LOC': 'بداية الموقع',
-    'I-LOC': 'داخل الموقع',
-    'B-ORG': 'بداية المؤسسة',
-    'B-PERS': 'بداية الشخص',
-    'I-PERS': 'داخل الشخص',
-    'B-MISC': 'بداية متنوعة',
-    'I-ORG': 'داخل المؤسسة',
-    'I-MISC': 'داخل متنوعة',
+    'LOC': 'مكان',
+    'ORG': 'مؤسسة',
+    'PERS': 'شخص',
+    'O': 'آخر',
+    'MISC': 'متنوع',
     }
+
     
     SAMEVERBALIZER = {
+    'LOC': 'LOC',
+    'ORG': 'ORG',
+    'PERS': 'PERS',
     'O': 'O',
-    'B-LOC': 'B-LOC',
-    'I-LOC': 'I-LOC',
-    'B-ORG': 'B-ORG',
-    'B-PERS': 'B-PERS',
-    'I-PERS': 'I-PERS',
-    'B-MISC': 'B-MISC',
-    'I-ORG': 'I-ORG',
-    'I-MISC': 'I-MISC',
+    'MISC': 'MISC',
     }
          
     def get_parts(self, example: InputExample) -> FilledPattern:
         text_a = self.shortenable(example.text_a)
         text_b = example.text_b
         
-        num_masks = max(len(get_verbalization_ids(c, self.wrapper.tokenizer, False)) for c in ANERcorpPVP.ARABICVERBALIZER.values())
+        # num_masks = max(len(get_verbalization_ids(c, self.wrapper.tokenizer, False)) for c in ANERcorpPVP.ARABICVERBALIZER.values())
         
         if self.pattern_id == 0:
-            return ['[',text_a,']',' ',text_b,': ',self.mask * num_masks], []
+            return ['[',text_a,']',' ',text_b,': ',self.mask], []
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
         

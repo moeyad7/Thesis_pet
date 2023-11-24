@@ -261,7 +261,7 @@ class ANERcorpProcessor(DataProcessor):
         return self.get_train_examples(data_dir)
     
     def get_labels(self) -> List[str]:
-        return ['O', 'B-LOC', 'I-LOC', 'B-ORG', 'B-PERS', 'I-PERS', 'B-MISC', 'I-ORG', 'I-MISC']
+        return ['LOC', 'ORG', 'O', 'PERS', 'MISC']
     
     @staticmethod
     def _create_examples(path: str, set_type: str) -> List[InputExample]:
@@ -862,7 +862,7 @@ TASK_HELPERS = {
     "multirc": task_helpers.MultiRcTaskHelper,
     "copa": task_helpers.CopaTaskHelper,
     "record": task_helpers.RecordTaskHelper,
-    'ar-ner-corp': task_helpers.ArabicNERTaskHelper,
+    # 'ar-ner-corp': task_helpers.ArabicNERTaskHelper,
 }
 
 # Dictionary mapping task names to the list of evaluation metrics used for each task
