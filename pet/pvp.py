@@ -405,7 +405,7 @@ class ANERcorpPVP(PVP):
         # num_masks = max(len(get_verbalization_ids(c, self.wrapper.tokenizer, False)) for c in ANERcorpPVP.ARABICVERBALIZER.values())
         
         if self.pattern_id == 0:
-            return ['[',text_a,']',' ',text_b,': ',self.mask], []
+            return ['(',text_a,')',' ',text_b,':',self.mask], []
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
         
