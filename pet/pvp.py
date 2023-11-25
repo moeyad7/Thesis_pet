@@ -414,6 +414,8 @@ class ANERcorpPVP(PVP):
             return [text_a,':',self.mask,'(',text_b,')'], []
         elif self.pattern_id == 2:
             return [text_a,'(',self.mask,')',text_b], []
+        elif self.pattern_id == 3:
+            return [self.mask,text_a,text_b], []
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
         
