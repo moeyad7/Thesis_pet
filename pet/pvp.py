@@ -365,7 +365,7 @@ class ArEnSAPVP(PVP):
     # }
     ARABICVERBALIZER = {
         "positive": ["جيد"],
-        "negative": ["سيء"],
+        "negative": ["وحش"],
         "neutral": ["ربما","محايد","متوسط"],
     }
            
