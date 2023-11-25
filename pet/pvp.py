@@ -401,15 +401,7 @@ class ANERcorpPVP(PVP):
     'O': 'O',
     'MISC': 'MISC',
     }
-    
-    ENGLISHVERBALIZER = {
-    'LOC': 'Location',
-    'ORG': 'Organization',
-    'PERS': 'Person',
-    'O': 'Other',
-    'MISC': 'Miscellaneous',
-    }
-         
+        
     def get_parts(self, example: InputExample) -> FilledPattern:
         text_a = self.shortenable(example.text_a)
         text_b = example.text_b
@@ -423,7 +415,7 @@ class ANERcorpPVP(PVP):
         
         
     def verbalize(self, label) -> List[str]:
-        return ANERcorpPVP.ENGLISHVERBALIZER[label]
+        return ANERcorpPVP.ARABICVERBALIZER[label]
 
 class YahooPVP(PVP):
     VERBALIZER = {
