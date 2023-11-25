@@ -411,7 +411,7 @@ class ANERcorpPVP(PVP):
         
         
     def verbalize(self, label) -> List[str]:
-        return ANERcorpPVP.ARABICVERBALIZER[label]
+        return ANERcorpPVP.SAMEVERBALIZER[label]
 
 class YahooPVP(PVP):
     VERBALIZER = {
