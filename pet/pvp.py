@@ -358,12 +358,16 @@ class ArEnSAPVP(PVP):
         "negative": ["Negative"],
         "neutral": ["Neutral"],
     }
+    # ARABICVERBALIZER = {
+    #     "positive": ["ايجابي","جيد"],
+    #     "negative": ["سلبي","سيء"],
+    #     "neutral": ["ربما","محايد","متوسط"],
+    # }
     ARABICVERBALIZER = {
-        "positive": ["ايجابي","جيد"],
+        "positive": ["جيد"],
         "negative": ["سلبي","سيء"],
         "neutral": ["ربما","محايد","متوسط"],
     }
-    
            
     def get_parts(self, example: InputExample) -> FilledPattern:
         text_a = self.shortenable(example.text_a)
@@ -406,6 +410,8 @@ class ANERcorpPVP(PVP):
         
         if self.pattern_id == 0:
             return ['(',text_a,')',' ',text_b,':',self.mask], []
+        elif self.pattern_id == 1:
+            return [text_b,' : ',self.mask,' (',text_b,')'], []
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
         
