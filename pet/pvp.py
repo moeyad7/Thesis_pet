@@ -386,20 +386,20 @@ class ArEnSAPVP(PVP):
 class ANERcorpPVP(PVP):
     
     ARABICVERBALIZER = {
-    'LOC': 'مكان',
-    'ORG': 'مؤسسة',
-    'PERS': 'شخص',
-    'O': 'آخر',
-    'MISC': 'متنوع',
+    'LOC': ['مكان', 'منطقة','موقع'],
+    'ORG': ['مؤسسة','منظمة','شركة','هيئة'],
+    'PERS': ['شخص','رجل','إنسان'],
+    'O': ['آخر','غير'],
+    'MISC': ['متنوع',''],
     }
 
-    
+
     SAMEVERBALIZER = {
-    'LOC': 'LOC',
-    'ORG': 'ORG',
-    'PERS': 'PERS',
-    'O': 'O',
-    'MISC': 'MISC',
+    'LOC': ['LOC'],
+    'ORG': ['ORG'],
+    'PERS': ['PERS'],
+    'O': ['O'],
+    'MISC': ['MISC'],
     }
         
     def get_parts(self, example: InputExample) -> FilledPattern:
