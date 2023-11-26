@@ -411,7 +411,7 @@ class ANERcorpPVP(PVP):
         if self.pattern_id == 0:
             return [self.mask, '(', text_b, ')'], []
         elif self.pattern_id == 1:
-            return [text_b, '.', self.mask], []
+            return [text_b, '. ', self.mask], []
         elif self.pattern_id == 2:
             return [text_b, 'Category: ', self.mask], []
         else:
