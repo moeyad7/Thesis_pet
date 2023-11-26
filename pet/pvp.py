@@ -409,16 +409,18 @@ class ANERcorpPVP(PVP):
         # num_masks = max(len(get_verbalization_ids(c, self.wrapper.tokenizer, False)) for c in ANERcorpPVP.ARABICVERBALIZER.values())
         
         if self.pattern_id == 0:
-            return [self.mask, '(', text_b, ')'], []
+            return [self.mask, text_b], []
         elif self.pattern_id == 1:
-            return [text_b, '. ', self.mask], []
+            return [text_b,'؟', self.mask], []
         elif self.pattern_id == 2:
-            return [text_b, 'Category: ', self.mask], []
+            return [text_b,self.mask], []
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
         
         
     def verbalize(self, label) -> List[str]:
+        if self.pattern_id == 2:
+            return ANERcorpPVP.SAMEVERBALIZER[label]
         return ANERcorpPVP.ARABICVERBALIZER[label]
 
 class YahooPVP(PVP):
