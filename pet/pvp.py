@@ -409,11 +409,11 @@ class ANERcorpPVP(PVP):
         # num_masks = max(len(get_verbalization_ids(c, self.wrapper.tokenizer, False)) for c in ANERcorpPVP.ARABICVERBALIZER.values())
         
         if self.pattern_id == 0:
-            return ['(',text_a,')',' ',text_b,':',self.mask], []
+            return [text_b,'[',self.mask,']'], []
         elif self.pattern_id == 1:
-            return [text_a,':',self.mask,'(',text_b,')'], []
+            return [self.mask,'-',text_b], []
         elif self.pattern_id == 2:
-            return [text_a,'(',self.mask,')',text_b], []
+              return [text_b,':',self.mask], []
         elif self.pattern_id == 3:
             return [text_b,self.mask ], []
         else:
