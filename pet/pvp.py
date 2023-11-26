@@ -403,19 +403,17 @@ class ANERcorpPVP(PVP):
     }
         
     def get_parts(self, example: InputExample) -> FilledPattern:
-        text_a = self.shortenable(example.text_a)
+        # text_a = self.shortenable(example.text_a)
         text_b = example.text_b
         
         # num_masks = max(len(get_verbalization_ids(c, self.wrapper.tokenizer, False)) for c in ANERcorpPVP.ARABICVERBALIZER.values())
         
         if self.pattern_id == 0:
-            return [text_b,'[',self.mask,']'], []
+            return [self.mask, '(', text_b, ')'], []
         elif self.pattern_id == 1:
-            return [self.mask,'-',text_b], []
+            return [self.mask, '.', text_b], []
         elif self.pattern_id == 2:
-              return [text_b,':',self.mask], []
-        elif self.pattern_id == 3:
-            return [text_b,self.mask ], []
+            return [text_b, 'Category: ', self.mask], []
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
         
