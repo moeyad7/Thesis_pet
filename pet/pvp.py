@@ -393,9 +393,6 @@ class ANERcorpPVP(PVP):
         text_b = example.text_b
         
         num_masks = max(len(get_verbalization_ids(c, self.wrapper.tokenizer, False)) for c in ANERcorpPVP.ARABICVERBALIZER.values())
-        print('+++++++++++++++++++++++')
-        print(num_masks)
-        print('+++++++++++++++++++++++')
         
         if self.pattern_id == 0:
             return [text_b, '. ',self.mask],[]
