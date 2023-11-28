@@ -737,6 +737,3 @@ class RecordTaskHelper(TaskHelper):
             torch.tensor([f.meta['candidate_labels'] for f in features], dtype=torch.long)
 
         feature_dict['question_idx'] = torch.tensor([f.meta['question_idx'] for f in features], dtype=torch.long)
-
-class ArabicNERTaskHelper(MultiMaskTaskHelper):
-    """A custom task helper for the ArabicNER dataset."""  

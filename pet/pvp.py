@@ -363,11 +363,6 @@ class ArEnSAPVP(PVP):
         "negative": ["سلبي","سيء"],
         "neutral": ["ربما","محايد","متوسط"],
     }
-    # ARABICVERBALIZER = {
-    #     "positive": ["جيد"],
-    #     "negative": ["وحش"],
-    #     "neutral": ["ربما","محايد","متوسط"],
-    # }
            
     def get_parts(self, example: InputExample) -> FilledPattern:
         text_a = self.shortenable(example.text_a)
@@ -397,7 +392,10 @@ class ANERcorpPVP(PVP):
         # text_a = self.shortenable(example.text_a)
         text_b = example.text_b
         
-        # num_masks = max(len(get_verbalization_ids(c, self.wrapper.tokenizer, False)) for c in ANERcorpPVP.ARABICVERBALIZER.values())
+        num_masks = max(len(get_verbalization_ids(c, self.wrapper.tokenizer, False)) for c in ANERcorpPVP.ARABICVERBALIZER.values())
+        print('+++++++++++++++++++++++')
+        print(num_masks)
+        print('+++++++++++++++++++++++')
         
         if self.pattern_id == 0:
             return [text_b, '. ',self.mask],[]
