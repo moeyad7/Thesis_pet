@@ -177,3 +177,5 @@ fi
 
 # Append the values to the output CSV file
 echo "$f1_p,$precision_p,$recall_p,$acc_p,$f1_all,$precision_all,$recall_all,$acc_all,$final_f1,$final_precision,$final_recall,$final_acc" >> "$output_csv"
+
+echo "Results saved to $output_csv"
