@@ -380,21 +380,21 @@ class ArEnSAPVP(PVP):
 
 class ANERcorpPVP(PVP):
 
-    # ARABICVERBALIZER = {
-    # 'LOC': ['مكان', 'منطقة','موقع'],
-    # 'ORG': ['مؤسسة','منظمة','شركة','هيئة'],
-    # 'PERS': ['شخص','رجل','إنسان'],
-    # 'O': ['آخر','غير'],
-    # 'MISC': ['متنوع'],
-    # }
-    
     ARABICVERBALIZER = {
-    'LOC': ['موقع'],
-    'ORG': ['مؤسسة'],
-    'PERS': ['شخص'],
-    'O': ['آخر'],
+    'LOC': ['مكان', 'منطقة','موقع'],
+    'ORG': ['مؤسسة','منظمة','شركة','هيئة'],
+    'PERS': ['شخص','رجل','إنسان'],
+    'O': ['آخر','غير'],
     'MISC': ['متنوع'],
     }
+    
+    # ARABICVERBALIZER = {
+    # 'LOC': ['موقع'],
+    # 'ORG': ['مؤسسة'],
+    # 'PERS': ['شخص'],
+    # 'O': ['آخر'],
+    # 'MISC': ['متنوع'],
+    # }
         
     def get_parts(self, example: InputExample) -> FilledPattern:
         # text_a = self.shortenable(example.text_a)
@@ -404,6 +404,10 @@ class ANERcorpPVP(PVP):
         
         if self.pattern_id == 0:
             return [text_b, '. ',self.mask],[]
+        elif self.pattern_id == 1:
+            return [self.mask, ' النوع؟',text_b],[]
+        elif self.pattern_id == 2:
+            return [text_b, self.mask],[]
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
         
