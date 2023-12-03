@@ -374,6 +374,8 @@ class ArEnSAPVP(PVP):
            return [text_a,'(',self.mask,')'], []
         elif self.pattern_id == 3:
               return [text_a,':',self.mask], []
+        elif self.pattern_id == 4:
+            return [text_a,self.mask], []
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
         
