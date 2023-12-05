@@ -280,7 +280,41 @@ class ANERcorpProcessor(DataProcessor):
 
         return examples
         
+
+class MyArSAProcessor(DataProcessor):
+    """Processor for the Arabic-English Sentiment Analysis data set."""
     
+    def get_train_examples(self, data_dir) -> List[InputExample]:
+        return self._create_examples(os.path.join(data_dir, "train.csv"), "train")
+    
+    def get_dev_examples(self, data_dir) -> List[InputExample]:
+        return self._create_examples(os.path.join(data_dir, "test.csv"), "dev")
+    
+    def get_test_examples(self, data_dir) -> List[InputExample]:
+        return self._create_examples(os.path.join(data_dir, "test.csv"), "test")
+    
+    def get_unlabeled_examples(self, data_dir) -> List[InputExample]:
+        return self.get_train_examples(data_dir)
+    
+    def get_labels(self) -> List[str]:
+        return ["pos", "neg"]
+    
+    @staticmethod
+    def _create_examples(path: str, set_type: str) -> List[InputExample]:
+        examples = []
+
+        with open(path, 'r' , encoding='utf-8') as f:
+            reader = csv.reader(f, delimiter=',')
+            for idx, row in enumerate(reader):
+                label,body = row
+                guid = "%s-%s" % (set_type, idx)
+                text_a = body.replace('\\', ' ')
+
+                example = InputExample(guid=guid, text_a=text_a, label=label)
+                examples.append(example)
+
+        return examples
+
 class YahooAnswersProcessor(DataProcessor):
     """Processor for the Yahoo Answers data set."""
 
@@ -853,7 +887,8 @@ PROCESSORS = {
     "ax-g": AxGProcessor,
     "ax-b": AxBProcessor,
     "ar-en-sa": ArEnSAProcessor,
-    "ar-ner-corp": ANERcorpProcessor
+    "ar-ner-corp": ANERcorpProcessor,
+    'my-ar-sa': MyArSAProcessor
 }  # type: Dict[str,Callable[[],DataProcessor]]
 
 # Dictionary mapping task names to their corresponding task helper classes
@@ -870,6 +905,7 @@ METRICS = {
     "multirc": ["acc", "f1", "em"],
     'ar-en-sa': ['acc', 'f1-macro','precision-macro','recall-macro'],
     'ar-ner-corp': ['acc', 'f1-macro','precision-macro','recall-macro'],
+    'my-ar-sa': ['acc', 'f1-macro','precision-macro','recall-macro'],
 }
 
 DEFAULT_METRICS = ["acc"]
