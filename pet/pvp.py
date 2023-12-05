@@ -438,13 +438,9 @@ class MyArSAPVP(PVP):
         text_a = self.shortenable(example.text_a)
         
         if self.pattern_id == 0:
-            return [self.mask,' : ',text_a], []
+            return [text_a, ' [',self.mask,']'], []
         elif self.pattern_id == 1:
-            return [self.mask,'. ',text_a], []
-        elif self.pattern_id == 2:
-            return [text_a, ' (',self.mask,')'], []
-        elif self.pattern_id == 3:
-            return ['(',self.mask,') ',text_a], []
+            return ['[',self.mask,'] ',text_a], []
         
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
