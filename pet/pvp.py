@@ -420,10 +420,6 @@ class ANERcorpPVP(PVP):
         return ANERcorpPVP.ARABICVERBALIZER[label]
 
 class MyArSAPVP(PVP):
-    VERBALIZER = {
-        "pos": ["Positive"],
-        "neg": ["Negative"],
-    }
     # ARABICVERBALIZER = {
     #     "pos": ["ايجابي","جيد"],
     #     "neg": ["سلبي","سيء"],
@@ -438,7 +434,7 @@ class MyArSAPVP(PVP):
         text_a = self.shortenable(example.text_a)
         
         if self.pattern_id == 0:
-            return [text_a, ' The previous sentence is ',self.mask], []
+            return [text_a,self.mask,'الجملة السابقة '], []
         elif self.pattern_id == 1:
             return [text_a,'الجملة السابقة ',self.mask], []
         
@@ -446,8 +442,6 @@ class MyArSAPVP(PVP):
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
         
     def verbalize(self, label) -> List[str]:
-        if self.pattern_id == 0:
-            return MyArSAPVP.VERBALIZER[label]
         return MyArSAPVP.ARABICVERBALIZER[label]
     
 class YahooPVP(PVP):
