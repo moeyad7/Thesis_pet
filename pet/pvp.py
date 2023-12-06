@@ -424,19 +424,16 @@ class MyArSAPVP(PVP):
         "pos": ["ايجابي","جيد"],
         "neg": ["سلبي","سيء"],
     }
-    
-    # ARABICVERBALIZER = {
-    #     "pos": ["ايجابي"],
-    #     "neg": ["سلبي"],
-    # }
-           
+     
     def get_parts(self, example: InputExample) -> FilledPattern:
         text_a = self.shortenable(example.text_a)
         
         if self.pattern_id == 0:
-            return [text_a,'[',self.mask,']'], []
+            return [text_a,':',self.mask], []
         elif self.pattern_id == 1:
             return [self.mask,'-',text_a], []
+        elif self.pattern_id == 2:
+              return [text_a,self.mask,], []
         
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
