@@ -354,9 +354,9 @@ class AgnewsPVP(PVP):
 
 class ArEnSAPVP(PVP):
     ENGLISHVERBALIZER = {
-        "positive": ["Good"],
-        "negative": ["Bad"],
-        "neutral": ["Neutral"],
+        "positive": ["Positive"],
+        "negative": ["Negative"],
+        "neutral": ["Maybe"],
     }
     ARABICVERBALIZER = {
         "positive": ["ايجابي","جيد"],
@@ -431,8 +431,8 @@ class MyArSAPVP(PVP):
     }
     
     ENGLISHVERBALIZER = {
-        "pos": ["Good"],
-        "neg": ["Bad"],
+        "pos": ["Positive"],
+        "neg": ["Negative"],
     }
      
     def get_parts(self, example: InputExample) -> FilledPattern:
@@ -521,8 +521,8 @@ class MnliPVP(PVP):
 
 class YelpPolarityPVP(PVP):
     VERBALIZER = {
-        "1": ["bad"],
-        "2": ["good"]
+        "1": ["Negative"],
+        "2": ["Positive"]
     }
 
     def get_parts(self, example: InputExample) -> FilledPattern:
@@ -546,9 +546,9 @@ class YelpPolarityPVP(PVP):
 class YelpFullPVP(YelpPolarityPVP):
     VERBALIZER = {
         "1": ["terrible"],
-        "2": ["bad"],
+        "2": ["Negative"],
         "3": ["okay"],
-        "4": ["good"],
+        "4": ["Positive"],
         "5": ["great"]
     }
 
