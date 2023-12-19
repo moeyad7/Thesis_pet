@@ -398,7 +398,7 @@ class ANERcorpPVP(PVP):
     
     ENGLISHVERBALIZER = {
     'LOC': ['Location'],
-    'ORG': ['Organization'],
+    'ORG': ['Company'],
     'PERS': ['Person'],
     'O': ['Other'],
     'MISC': ['Miscellaneous'],
