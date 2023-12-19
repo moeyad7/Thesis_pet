@@ -401,7 +401,7 @@ class ANERcorpPVP(PVP):
     'ORG': ['Company'],
     'PERS': ['Person'],
     'O': ['Other'],
-    'MISC': ['Miscellaneous'],
+    'MISC': ['Various'],
     }
     
         
