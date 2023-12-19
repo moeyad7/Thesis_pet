@@ -358,10 +358,16 @@ class ArEnSAPVP(PVP):
         "negative": ["Bad"],
         "neutral": ["Maybe"],
     }
+    # ARABICVERBALIZER = {
+    #     "positive": ["ايجابي","جيد"],
+    #     "negative": ["سلبي","سيء"],
+    #     "neutral": ["ربما","محايد","متوسط"],
+    # }
+    
     ARABICVERBALIZER = {
-        "positive": ["ايجابي","جيد"],
-        "negative": ["سلبي","سيء"],
-        "neutral": ["ربما","محايد","متوسط"],
+        "positive": ["جيد"],
+        "negative": ["سيء"],
+        "neutral": ["ربما"],
     }
            
     def get_parts(self, example: InputExample) -> FilledPattern:
@@ -384,15 +390,23 @@ class ArEnSAPVP(PVP):
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
         
     def verbalize(self, label) -> List[str]:
-        return ArEnSAPVP.ENGLISHVERBALIZER[label]
+        return ArEnSAPVP.ARABICVERBALIZER[label]
 
 class ANERcorpPVP(PVP):
 
+    # ARABICVERBALIZER = {
+    # 'LOC': ['مكان', 'منطقة','موقع'],
+    # 'ORG': ['مؤسسة','منظمة','شركة','هيئة'],
+    # 'PERS': ['شخص','رجل','إنسان'],
+    # 'O': ['آخر','غير'],
+    # 'MISC': ['متنوع'],
+    # }
+    
     ARABICVERBALIZER = {
-    'LOC': ['مكان', 'منطقة','موقع'],
-    'ORG': ['مؤسسة','منظمة','شركة','هيئة'],
-    'PERS': ['شخص','رجل','إنسان'],
-    'O': ['آخر','غير'],
+    'LOC': ['موقع'],
+    'ORG': ['مؤسسة'],
+    'PERS': ['شخص'],
+    'O': ['آخر'],
     'MISC': ['متنوع'],
     }
     
@@ -422,12 +436,17 @@ class ANERcorpPVP(PVP):
         
         
     def verbalize(self, label) -> List[str]:
-        return ANERcorpPVP.ENGLISHVERBALIZER[label]
+        return ANERcorpPVP.ARABICVERBALIZER[label]
 
 class MyArSAPVP(PVP):
+    # ARABICVERBALIZER = {
+    #     "pos": ["ايجابي","جيد"],
+    #     "neg": ["سلبي","سيء"],
+    # }
+    
     ARABICVERBALIZER = {
-        "pos": ["ايجابي","جيد"],
-        "neg": ["سلبي","سيء"],
+        "pos": ["جيد"],
+        "neg": ["سيء"],
     }
     
     ENGLISHVERBALIZER = {
@@ -452,7 +471,7 @@ class MyArSAPVP(PVP):
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
         
     def verbalize(self, label) -> List[str]:
-        return MyArSAPVP.ENGLISHVERBALIZER[label]
+        return MyArSAPVP.ARABICVERBALIZER[label]
     
 class YahooPVP(PVP):
     VERBALIZER = {
