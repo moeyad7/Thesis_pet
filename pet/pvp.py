@@ -404,7 +404,7 @@ class ANERcorpPVP(PVP):
     
     ARABICVERBALIZER = {
     'LOC': ['موقع'],
-    'ORG': ['شركة'],
+    'ORG': ['هيئة'],
     'PERS': ['شخص'],
     'O': ['آخر'],
     'MISC': ['متنوع'],
