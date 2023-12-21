@@ -358,17 +358,17 @@ class ArEnSAPVP(PVP):
         "negative": ["Bad"],
         "neutral": ["Maybe"],
     }
-    # ARABICVERBALIZER = {
-    #     "positive": ["ايجابي","جيد"],
-    #     "negative": ["سلبي","سيء"],
-    #     "neutral": ["ربما","محايد","متوسط"],
-    # }
-    
     ARABICVERBALIZER = {
-        "positive": ["جيد"],
-        "negative": ["سيء"],
-        "neutral": ["ربما"],
+        "positive": ["ايجابي","جيد"],
+        "negative": ["سلبي","سيء"],
+        "neutral": ["ربما","محايد","متوسط"],
     }
+    
+    # ARABICVERBALIZER = {
+    #     "positive": ["جيد"],
+    #     "negative": ["سيء"],
+    #     "neutral": ["ربما"],
+    # }
            
     def get_parts(self, example: InputExample) -> FilledPattern:
         text_a = self.shortenable(example.text_a)
