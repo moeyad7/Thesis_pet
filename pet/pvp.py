@@ -439,15 +439,15 @@ class ANERcorpPVP(PVP):
         return ANERcorpPVP.ARABICVERBALIZER[label]
 
 class MyArSAPVP(PVP):
-    # ARABICVERBALIZER = {
-    #     "pos": ["ايجابي","جيد"],
-    #     "neg": ["سلبي","سيء"],
-    # }
-    
     ARABICVERBALIZER = {
-        "pos": ["جيد"],
-        "neg": ["سيء"],
+        "pos": ["ايجابي","جيد"],
+        "neg": ["سلبي","سيء"],
     }
+    
+    # ARABICVERBALIZER = {
+    #     "pos": ["جيد"],
+    #     "neg": ["سيء"],
+    # }
     
     ENGLISHVERBALIZER = {
         "pos": ["Good"],
