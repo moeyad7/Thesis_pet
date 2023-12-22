@@ -374,7 +374,7 @@ class ArEnSAPVP(PVP):
         text_a = self.shortenable(example.text_a)
         
         if self.pattern_id == 0:
-            return [text_a,self.mask], []
+            return [self.mask,text_a], []
         # Prompt patterns
         elif self.pattern_id == 1:
             return [self.mask,'الجملة السابقة؟',text_a], []
