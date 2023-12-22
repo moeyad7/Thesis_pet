@@ -487,37 +487,10 @@ class MyArSAPVP(PVP):
      
     def get_parts(self, example: InputExample) -> FilledPattern:
         text_a = self.shortenable(example.text_a)
-        
-        # if self.pattern_id == 0:
-        #     return [text_a, ': ', self.mask], []
-
-        # elif self.pattern_id == 1:
-        #     return [text_a, '. ', self.mask], []
-
-        # elif self.pattern_id == 2:
-        #     return [text_a, ', ', self.mask], []
-
-        # elif self.pattern_id == 3:
-        #     return [text_a, '? ', self.mask], []
-
-        # elif self.pattern_id == 4:
-        #     return [text_a, '-', self.mask], []
-
-        # elif self.pattern_id == 5:
-        #     return [text_a, ' (', self.mask, ')'], []
-
-        # elif self.pattern_id == 6:
-        #     return [text_a, ' [', self.mask, ']'], []
-        
+                
         # Flipped
         
-        if self.pattern_id == 0:
-            return [text_a, ' [', self.mask, ']'], []
-
-        elif self.pattern_id == 2:
-            return [self.mask, ', ', text_a], []
-
-        elif self.pattern_id == 3:
+        if self.pattern_id == 3:
             return [self.mask, '? ', text_a], []
 
         elif self.pattern_id == 4:
