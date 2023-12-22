@@ -375,17 +375,12 @@ class ArEnSAPVP(PVP):
         
         if self.pattern_id == 0:
             return [text_a,self.mask], []
+        # Prompt patterns
+        elif self.pattern_id == 1:
+            return [self.mask,'الجملة السابقة؟',text_a], []
+        elif self.pattern_id == 2:
+            return [text_a,self.mask,'الجملة الاتية؟'], []
         
-        # if self.pattern_id == 0:
-        #     return [text_a,'[',self.mask,']'], []
-        # elif self.pattern_id == 1:
-        #     return [self.mask,'-',text_a], []
-        # elif self.pattern_id == 2:
-        #    return [text_a,'(',self.mask,')'], []
-        # elif self.pattern_id == 3:
-        #       return [text_a,':',self.mask], []
-        # elif self.pattern_id == 4:
-        #     return [text_a,self.mask], []
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
         
@@ -420,17 +415,16 @@ class ANERcorpPVP(PVP):
     
         
     def get_parts(self, example: InputExample) -> FilledPattern:
-        text_b = example.text_b
+        text_a = example.text_b
         
         if self.pattern_id == 0:
-            return [text_b,self.mask], []
+            return [self.mask,text_a], []
+        # Prompt patterns
+        elif self.pattern_id == 1:
+            return [self.mask,'الجملة السابقة؟',text_a], []
+        elif self.pattern_id == 2:
+            return [text_a,self.mask,'الجملة الاتية؟'], []
         
-        # if self.pattern_id == 0:
-        #     return [text_b, '. ',self.mask],[]
-        # elif self.pattern_id == 1:
-        #     return [self.mask, ' النوع؟',text_b],[]
-        # elif self.pattern_id == 2:
-        #     return [text_b, ':',self.mask],[]
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
         
@@ -459,6 +453,11 @@ class MyArSAPVP(PVP):
         
         if self.pattern_id == 0:
             return [self.mask,text_a], []
+        # Prompt patterns
+        elif self.pattern_id == 1:
+            return [self.mask,'الجملة السابقة؟',text_a], []
+        elif self.pattern_id == 2:
+            return [text_a,self.mask,'الجملة الاتية؟'], []
         
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
