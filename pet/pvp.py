@@ -454,26 +454,28 @@ class ANERcorpPVP(PVP):
     def get_parts(self, example: InputExample) -> FilledPattern:
         text_a = example.text_b
         
+        # Flipped
+        
         if self.pattern_id == 0:
-            return [text_a, ': ', self.mask], []
+            return [self.mask, ': ', text_a], []
 
         elif self.pattern_id == 1:
-            return [text_a, '. ', self.mask], []
+            return [self.mask, '. ', text_a], []
 
         elif self.pattern_id == 2:
-            return [text_a, ', ', self.mask], []
+            return [self.mask, ', ', text_a], []
 
         elif self.pattern_id == 3:
-            return [text_a, '? ', self.mask], []
+            return [self.mask, '? ', text_a], []
 
         elif self.pattern_id == 4:
-            return [text_a, '-', self.mask], []
+            return [self.mask, '-', text_a], []
 
         elif self.pattern_id == 5:
-            return [text_a, ' (', self.mask, ')'], []
+            return [self.mask, ' (', text_a, ')'], []
 
         elif self.pattern_id == 6:
-            return [text_a, ' [', self.mask, ']'], []
+            return [self.mask, ' [', text_a, ']'], []
         
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
@@ -506,14 +508,14 @@ class MyArSAPVP(PVP):
         if self.pattern_id == 3:
             return [self.mask, '? ', text_a], []
 
-        elif self.pattern_id == 4:
-            return [self.mask, '-', text_a], []
+        # elif self.pattern_id == 4:
+        #     return [self.mask, '-', text_a], []
 
-        elif self.pattern_id == 5:
-            return [self.mask, ' (', text_a, ')'], []
+        # elif self.pattern_id == 5:
+        #     return [self.mask, ' (', text_a, ')'], []
 
-        elif self.pattern_id == 6:
-            return [self.mask, ' [', text_a, ']'], []
+        # elif self.pattern_id == 6:
+        #     return [self.mask, ' [', text_a, ']'], []
         
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
