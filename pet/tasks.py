@@ -261,7 +261,7 @@ class ANERcorpProcessor(DataProcessor):
         return self.get_train_examples(data_dir)
     
     def get_labels(self) -> List[str]:
-        return ['LOC', 'ORG', 'O', 'PERS', 'MISC']
+        return ['LOC', 'ORG', 'O', 'PERS']
     
     @staticmethod
     def _create_examples(path: str, set_type: str) -> List[InputExample]:
