@@ -397,12 +397,12 @@ class ANERcorpPVP(PVP):
     'MISC': ['متنوع'],
     }
     
-    ZEROARABICVERBALIZER = {
-    'LOC': ['مكان', 'منطقة','موقع'],
-    'ORG': ['مؤسسة','منظمة','شركة','هيئة'],
-    'PERS': ['شخص','رجل','إنسان'],
-    'O': ['آخر','غير'],
-    }
+    # ZEROARABICVERBALIZER = {
+    # 'LOC': ['مكان', 'منطقة','موقع'],
+    # 'ORG': ['مؤسسة','منظمة','شركة','هيئة'],
+    # 'PERS': ['شخص','رجل','إنسان'],
+    # 'O': ['آخر','غير'],
+    # }
     
     # ARABICVERBALIZER = {
     # 'LOC': ['موقع'],
@@ -438,7 +438,7 @@ class ANERcorpPVP(PVP):
         
         
     def verbalize(self, label) -> List[str]:
-        return ANERcorpPVP.ZEROARABICVERBALIZER[label]
+        return ANERcorpPVP.ARABICVERBALIZER[label]
 
 class MyArSAPVP(PVP):
     ARABICVERBALIZER = {
