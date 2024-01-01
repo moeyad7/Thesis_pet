@@ -24,12 +24,13 @@ import torch.nn as nn
 import numpy as np
 from torch.utils.data import RandomSampler, DataLoader, SequentialSampler
 from tqdm import trange, tqdm
-from transformers import InputExample, AdamW, get_linear_schedule_with_warmup, PreTrainedTokenizer, BertForMaskedLM, \
+from transformers import  InputExample, AdamW, get_linear_schedule_with_warmup, PreTrainedTokenizer, BertForMaskedLM, \
     RobertaForMaskedLM, XLMRobertaForMaskedLM, XLNetConfig, XLNetForSequenceClassification, XLNetTokenizer, \
     XLNetLMHeadModel, BertConfig, BertForSequenceClassification, BertTokenizer, RobertaConfig, \
     RobertaForSequenceClassification, RobertaTokenizer, XLMRobertaConfig, XLMRobertaForSequenceClassification, \
     XLMRobertaTokenizer, AlbertForSequenceClassification, AlbertForMaskedLM, AlbertTokenizer, AlbertConfig, \
-    GPT2Config, GPT2LMHeadModel, GPT2Tokenizer
+    GPT2Config, GPT2LMHeadModel, GPT2Tokenizer, GPT2ForSequenceClassification, AutoConfig, AutoTokenizer, AutoModelForSequenceClassification,\
+    AutoModelForMaskedLM
 from transformers import __version__ as transformers_version
 
 import log
@@ -87,6 +88,12 @@ MODEL_CLASSES = {
         'config': GPT2Config,
         'tokenizer': GPT2Tokenizer,
         MLM_WRAPPER: GPT2LMHeadModel
+    },
+    'arabert':{
+        'config': AutoConfig,
+        'tokenizer': AutoTokenizer,
+        SEQUENCE_CLASSIFIER_WRAPPER: AutoModelForSequenceClassification,
+        MLM_WRAPPER: AutoModelForMaskedLM
     },
 }
 
