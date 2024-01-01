@@ -762,6 +762,40 @@ class RecordProcessor(DataProcessor):
         return examples
 
 
+class MyArSAProcessor(DataProcessor):
+    """Processor for the Arabic-English Sentiment Analysis data set."""
+    
+    def get_train_examples(self, data_dir) -> List[InputExample]:
+        return self._create_examples(os.path.join(data_dir, "train.csv"), "train")
+    
+    def get_dev_examples(self, data_dir) -> List[InputExample]:
+        return self._create_examples(os.path.join(data_dir, "test.csv"), "dev")
+    
+    def get_test_examples(self, data_dir) -> List[InputExample]:
+        return self._create_examples(os.path.join(data_dir, "test.csv"), "test")
+    
+    def get_unlabeled_examples(self, data_dir) -> List[InputExample]:
+        return self.get_train_examples(data_dir)
+    
+    def get_labels(self) -> List[str]:
+        return ["pos", "neg"]
+    
+    @staticmethod
+    def _create_examples(path: str, set_type: str) -> List[InputExample]:
+        examples = []
+
+        with open(path, 'r' , encoding='utf-8') as f:
+            reader = csv.reader(f, delimiter=',')
+            for idx, row in enumerate(reader):
+                label,body = row
+                guid = "%s-%s" % (set_type, idx)
+                text_a = body.replace('\\', ' ')
+
+                example = InputExample(guid=guid, text_a=text_a, label=label)
+                examples.append(example)
+
+        return examples
+
 PROCESSORS = {
     "mnli": MnliProcessor,
     "mnli-mm": MnliMismatchedProcessor,
@@ -782,6 +816,7 @@ PROCESSORS = {
     "record": RecordProcessor,
     "ax-g": AxGProcessor,
     "ax-b": AxBProcessor,
+    "my-ar-sa": MyArSAProcessor,
 }  # type: Dict[str,Callable[[],DataProcessor]]
 
 TASK_HELPERS = {
@@ -793,7 +828,8 @@ TASK_HELPERS = {
 
 METRICS = {
     "cb": ["acc", "f1-macro"],
-    "multirc": ["acc", "f1", "em"]
+    "multirc": ["acc", "f1", "em"],
+    'my-ar-sa': ['acc', 'f1-macro','precision-macro','recall-macro'],
 }
 
 DEFAULT_METRICS = ["acc"]

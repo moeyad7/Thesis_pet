@@ -21,7 +21,7 @@ from typing import List, Dict
 
 import numpy as np
 import torch
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score , precision_score, recall_score
 from transformers.data.metrics import simple_accuracy
 
 import log
@@ -498,9 +498,17 @@ def evaluate(model: TransformerModelWrapper, eval_data: List[InputExample], conf
         elif metric == 'f1':
             scores[metric] = f1_score(results['labels'], predictions)
         elif metric == 'f1-macro':
-            scores[metric] = f1_score(results['labels'], predictions, average='macro')
+            scores[metric] = f1_score(
+                results['labels'], predictions, average='macro')
         elif metric == 'em':
-            scores[metric] = exact_match(predictions, results['labels'], results['question_ids'])
+            scores[metric] = exact_match(
+                predictions, results['labels'], results['question_ids'])
+        elif metric == 'precision-macro':
+            scores[metric] = precision_score(
+                results['labels'], predictions, average='macro')
+        elif metric == 'recall-macro':
+            scores[metric] = recall_score(
+                results['labels'], predictions, average='macro')
         else:
             raise ValueError(f"Metric '{metric}' not implemented")
 
