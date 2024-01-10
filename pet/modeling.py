@@ -831,6 +831,8 @@ def generate_ipet_train_set(logits_lists: List[LogitsList], labels: List[str], o
     # Extract the logits and weights from the selected lists
     logits = np.array([ll.logits for ll in logits_lists])  # Extract the logits
     weights = np.array([ll.score for ll in logits_lists])  # Extract the scores (or weights)
+    
+    print("Logits before applying reduction",logits)
 
     # Reduce logits using the specified reduction strategy ('mean' or 'wmean')
     if reduction == 'mean':
@@ -842,6 +844,9 @@ def generate_ipet_train_set(logits_lists: List[LogitsList], labels: List[str], o
     else:
         raise ValueError(
             "Reduction strategy '{}' not implemented".format(reduction))
+
+    print("Logits after applying reduction",logits)
+
 
     # Ensure that the number of logits matches the original data
     print('logits length:',len(logits))
