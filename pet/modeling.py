@@ -844,6 +844,8 @@ def generate_ipet_train_set(logits_lists: List[LogitsList], labels: List[str], o
             "Reduction strategy '{}' not implemented".format(reduction))
 
     # Ensure that the number of logits matches the original data
+    print('logits length:',len(logits))
+    print('original data length:',len(original_data))
     assert len(logits) == len(original_data)
 
     # Assign logits and labels to the original data
