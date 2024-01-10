@@ -782,7 +782,6 @@ def generate_ipet_train_sets(train_data: List[InputExample], unlabeled_data: Lis
     for subdir in subdirs:
         other_logits_lists = [ll for sd,
                               ll in logits_lists.items() if sd != subdir]
-        
         subdir_train_set = generate_ipet_train_set(
             other_logits_lists, labels=labels, original_data=unlabeled_data, examples_per_label=examples_per_label,
             logits_percentage=logits_percentage, reduction=reduction, n_most_likely=n_most_likely, rng=rng,
@@ -822,23 +821,16 @@ def generate_ipet_train_set(logits_lists: List[LogitsList], labels: List[str], o
         rng_np = np.random.RandomState()
 
     # Select a subset of logits_lists based on the specified percentage
-    print("logits_list length",len(logits_lists))
-    print("logits_lists length * logits_percentage",len(logits_lists) * logits_percentage)
-    print("round(len(logits_lists) * logits_percentage)",round(len(logits_lists) * logits_percentage))
     
     # Calculate the number of logits lists to select based on the specified percentage
     num_logits_lists = round(len(logits_lists) * logits_percentage)
-    print("Num Logits Lists",num_logits_lists)
 
     # Randomly sample the selected number of logits lists from the original list
     logits_lists = rng.sample(logits_lists, k=num_logits_lists)
-    
 
     # Extract the logits and weights from the selected lists
     logits = np.array([ll.logits for ll in logits_lists])  # Extract the logits
     weights = np.array([ll.score for ll in logits_lists])  # Extract the scores (or weights)
-    
-    print("Logits before applying reduction line 841",logits)
 
     # Reduce logits using the specified reduction strategy ('mean' or 'wmean')
     if reduction == 'mean':
@@ -851,12 +843,7 @@ def generate_ipet_train_set(logits_lists: List[LogitsList], labels: List[str], o
         raise ValueError(
             "Reduction strategy '{}' not implemented".format(reduction))
 
-    print("Logits after applying reduction",logits)
-
-
     # Ensure that the number of logits matches the original data
-    print('logits length:',len(logits))
-    print('original data length:',len(original_data))
     assert len(logits) == len(original_data)
 
     # Assign logits and labels to the original data
