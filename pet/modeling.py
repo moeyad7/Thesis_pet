@@ -775,16 +775,15 @@ def generate_ipet_train_sets(train_data: List[InputExample], unlabeled_data: Lis
             results_file, result_train, len(logits), len(logits[0])))
 
         # Create a LogitsList object and store it in the dictionary
-        print("Result Train:",result_train)
-        print("Logits:",logits)
         loglist = LogitsList(score=result_train, logits=logits)
         logits_lists[subdir] = loglist
-        print(logits_lists)
 
     # Loop through subdirectories again to generate training sets
     for subdir in subdirs:
         other_logits_lists = [ll for sd,
                               ll in logits_lists.items() if sd != subdir]
+        
+        print("Other Logits Lists:",other_logits_lists)
         subdir_train_set = generate_ipet_train_set(
             other_logits_lists, labels=labels, original_data=unlabeled_data, examples_per_label=examples_per_label,
             logits_percentage=logits_percentage, reduction=reduction, n_most_likely=n_most_likely, rng=rng,
