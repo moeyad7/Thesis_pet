@@ -832,7 +832,6 @@ def generate_ipet_train_set(logits_lists: List[LogitsList], labels: List[str], o
 
     # Randomly sample the selected number of logits lists from the original list
     logits_lists = rng.sample(logits_lists, k=num_logits_lists)
-    print("Logits Lists line 834",logits)
     
 
     # Extract the logits and weights from the selected lists
