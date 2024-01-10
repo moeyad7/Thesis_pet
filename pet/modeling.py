@@ -828,7 +828,7 @@ def generate_ipet_train_set(logits_lists: List[LogitsList], labels: List[str], o
     
     # Calculate the number of logits lists to select based on the specified percentage
     num_logits_lists = round(len(logits_lists) * logits_percentage)
-    print("Num Logits Lists line 830",num_logits_lists)
+    print("Num Logits Lists",num_logits_lists)
 
     # Randomly sample the selected number of logits lists from the original list
     logits_lists = rng.sample(logits_lists, k=num_logits_lists)
