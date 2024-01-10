@@ -775,8 +775,11 @@ def generate_ipet_train_sets(train_data: List[InputExample], unlabeled_data: Lis
             results_file, result_train, len(logits), len(logits[0])))
 
         # Create a LogitsList object and store it in the dictionary
+        print("Result Train:",result_train)
+        print("Logits:",logits)
         loglist = LogitsList(score=result_train, logits=logits)
         logits_lists[subdir] = loglist
+        print(logits_lists)
 
     # Loop through subdirectories again to generate training sets
     for subdir in subdirs:
@@ -824,15 +827,18 @@ def generate_ipet_train_set(logits_lists: List[LogitsList], labels: List[str], o
     
     # Calculate the number of logits lists to select based on the specified percentage
     num_logits_lists = round(len(logits_lists) * logits_percentage)
+    print("Num Logits Lists line 830",num_logits_lists)
 
     # Randomly sample the selected number of logits lists from the original list
     logits_lists = rng.sample(logits_lists, k=num_logits_lists)
+    print("Logits Lists line 834",logits)
+    
 
     # Extract the logits and weights from the selected lists
     logits = np.array([ll.logits for ll in logits_lists])  # Extract the logits
     weights = np.array([ll.score for ll in logits_lists])  # Extract the scores (or weights)
     
-    print("Logits before applying reduction",logits)
+    print("Logits before applying reduction line 841",logits)
 
     # Reduce logits using the specified reduction strategy ('mean' or 'wmean')
     if reduction == 'mean':
