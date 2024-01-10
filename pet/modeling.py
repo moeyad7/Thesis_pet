@@ -783,7 +783,6 @@ def generate_ipet_train_sets(train_data: List[InputExample], unlabeled_data: Lis
         other_logits_lists = [ll for sd,
                               ll in logits_lists.items() if sd != subdir]
         
-        print("Other Logits Lists:",other_logits_lists)
         subdir_train_set = generate_ipet_train_set(
             other_logits_lists, labels=labels, original_data=unlabeled_data, examples_per_label=examples_per_label,
             logits_percentage=logits_percentage, reduction=reduction, n_most_likely=n_most_likely, rng=rng,
@@ -823,6 +822,9 @@ def generate_ipet_train_set(logits_lists: List[LogitsList], labels: List[str], o
         rng_np = np.random.RandomState()
 
     # Select a subset of logits_lists based on the specified percentage
+    print("logits_list length",len(logits_lists))
+    print("logits_lists length * logits_percentage",len(logits_lists) * logits_percentage)
+    print("round(len(logits_lists) * logits_percentage)",round(len(logits_lists) * logits_percentage))
     
     # Calculate the number of logits lists to select based on the specified percentage
     num_logits_lists = round(len(logits_lists) * logits_percentage)
