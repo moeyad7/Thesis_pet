@@ -431,9 +431,9 @@ def train_pet_ensemble(model_config: Union[WrapperConfig, List[WrapperConfig]], 
                             'eval_logits.txt'), eval_result['logits'])
 
                 scores = eval_result['scores']
-                logger.info(
-                    "--- RESULT (pattern_id={}, iteration={}) ---".format(pattern_id, iteration))
-                logger.info(scores)
+                # logger.info(
+                #     "--- RESULT (pattern_id={}, iteration={}) ---".format(pattern_id, iteration))
+                # logger.info(scores)
 
                 results_dict['test_set_after_training'] = scores
                 with open(os.path.join(pattern_iter_output_dir, 'results.json'), 'w') as fh:
