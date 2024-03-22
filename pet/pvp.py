@@ -467,7 +467,7 @@ class ArEnNERPVP(PVP):
 
     ARABICVERBALIZERBIG = {
         'LOC': ['مكان', 'موقع'],
-        'ORG': ['هيئة'],
+        'ORG': ['كيان'],
         'PERS': ['شخص', 'رجل', 'إنسان'],
         'O': ['آخر', 'غير'],
         'MISC': ['متنوع'],
