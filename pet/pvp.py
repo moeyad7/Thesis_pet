@@ -902,7 +902,7 @@ PVPS = {
     'boolq': BoolQPVP,
     'copa': CopaPVP,
     'multirc': MultiRcPVP,
-    'record': RecordPVP,
+    # 'record': RecordPVP,
     'ax-b': RtePVP,
     'ax-g': RtePVP,
     'ar-en-sa': ArEnSAPVP,
