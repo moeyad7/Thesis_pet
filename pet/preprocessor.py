@@ -144,6 +144,9 @@ class SequenceClassifierPreprocessor(Preprocessor):
 
         # If task helper is not available or doesn't provide inputs, use the tokenizer to encode the text
         if inputs is None:
+            print("This is example.text_a",example.text_a)
+            print("This is example.text_b",example.text_b)
+        
             inputs = self.wrapper.tokenizer.encode_plus(
                 example.text_a if example.text_a else None,
                 example.text_b if example.text_b else None,
