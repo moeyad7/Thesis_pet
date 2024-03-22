@@ -225,9 +225,7 @@ class TransformerModelWrapper:
 
     @staticmethod
     def _load_config(path: str) -> WrapperConfig:
-        print('hi')
         if not os.path.exists(os.path.join(path, CONFIG_NAME)):
-            print(os.path.join(path, 'config.json'))
             with open(os.path.join(path, 'config.json'), 'r') as f:
                 return jsonpickle.decode(f.read())
         
@@ -405,7 +403,7 @@ class TransformerModelWrapper:
                         logging_loss = tr_loss
 
                         # Print the logs in JSON format
-                        print(json.dumps({**logs, **{'step': global_step}}))
+                        # print(json.dumps({**logs, **{'step': global_step}}))
 
 
                 if 0 < max_steps < global_step:
