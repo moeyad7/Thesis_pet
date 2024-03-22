@@ -279,6 +279,40 @@ class ANERcorpProcessor(DataProcessor):
                 examples.append(example)
 
         return examples
+    
+class ArEnNERProcessor(DataProcessor):
+    """Processor for the Arabic English NER dataset"""
+    
+    def get_train_examples(self, data_dir) -> List[InputExample]:
+        return self._create_examples(os.path.join(data_dir, "train.csv"), "train")
+    
+    def get_dev_examples(self, data_dir) -> List[InputExample]:
+        return self._create_examples(os.path.join(data_dir, "test.csv"), "dev")
+    
+    def get_test_examples(self, data_dir) -> List[InputExample]:
+        return self._create_examples(os.path.join(data_dir, "test.csv"), "test")
+    
+    def get_unlabeled_examples(self, data_dir) -> List[InputExample]:
+        return self.get_train_examples(data_dir)
+    
+    def get_labels(self) -> List[str]:
+        return ['LOC', 'ORG', 'O', 'PERS', 'MISC']
+    
+    @staticmethod
+    def _create_examples(path: str, set_type: str) -> List[InputExample]:
+        examples = []
+        
+        with open(path, encoding='utf8') as f:
+            reader = csv.reader(f, delimiter=',')
+            for idx, row in enumerate(reader):
+                label, word = row
+                guid = "%s-%s" % (set_type, idx)
+                text_a = word.replace('\\n', ' ').replace('\\', ' ')
+
+                example = InputExample(guid=guid, text_a=text_a, label=label)
+                examples.append(example)
+
+        return examples
         
 
 class MyArSAProcessor(DataProcessor):
@@ -888,7 +922,8 @@ PROCESSORS = {
     "ax-b": AxBProcessor,
     "ar-en-sa": ArEnSAProcessor,
     "ar-ner-corp": ANERcorpProcessor,
-    'my-ar-sa': MyArSAProcessor
+    'my-ar-sa': MyArSAProcessor,
+    'ar-en-ner' : ArEnNERProcessor
 }  # type: Dict[str,Callable[[],DataProcessor]]
 
 # Dictionary mapping task names to their corresponding task helper classes
@@ -905,6 +940,7 @@ METRICS = {
     "multirc": ["acc", "f1", "em"],
     'ar-en-sa': ['acc', 'f1-macro','precision-macro','recall-macro'],
     'ar-ner-corp': ['acc', 'f1-macro','precision-macro','recall-macro'],
+    'ar-en-ner': ['acc', 'f1-macro','precision-macro','recall-macro'],
     'my-ar-sa': ['acc', 'f1-macro','precision-macro','recall-macro'],
 }
 

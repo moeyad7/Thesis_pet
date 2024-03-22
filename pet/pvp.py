@@ -31,7 +31,8 @@ from pet import wrapper as wrp
 
 logger = log.get_logger('root')
 
-FilledPattern = Tuple[List[Union[str, Tuple[str, bool]]], List[Union[str, Tuple[str, bool]]]]
+FilledPattern = Tuple[List[Union[str, Tuple[str, bool]]],
+                      List[Union[str, Tuple[str, bool]]]]
 
 
 class PVP(ABC):
@@ -56,11 +57,13 @@ class PVP(ABC):
 
         # Load verbalizer from file if provided
         if verbalizer_file:
-            self.verbalize = PVP._load_verbalizer_from_file(verbalizer_file, self.pattern_id)
+            self.verbalize = PVP._load_verbalizer_from_file(
+                verbalizer_file, self.pattern_id)
 
         # Check if MultiMask is needed and build MLM to CLS logits tensor
         use_multimask = (self.wrapper.config.task_name in TASK_HELPERS) and (
-            issubclass(TASK_HELPERS[self.wrapper.config.task_name], MultiMaskTaskHelper)
+            issubclass(
+                TASK_HELPERS[self.wrapper.config.task_name], MultiMaskTaskHelper)
         )
         if not use_multimask and self.wrapper.config.wrapper_type in [wrp.MLM_WRAPPER, wrp.PLM_WRAPPER]:
             self.mlm_logits_to_cls_logits_tensor = self._build_mlm_logits_to_cls_logits_tensor()
@@ -70,7 +73,8 @@ class PVP(ABC):
         label_list = self.wrapper.config.label_list
 
         # Initialize a tensor with dimensions for labels and verbalizers
-        m2c_tensor = torch.ones([len(label_list), self.max_num_verbalizers], dtype=torch.long) * -1
+        m2c_tensor = torch.ones(
+            [len(label_list), self.max_num_verbalizers], dtype=torch.long) * -1
 
         # Iterate through each label
         for label_idx, label in enumerate(label_list):
@@ -80,7 +84,8 @@ class PVP(ABC):
             # Iterate through each verbalizer for the label
             for verbalizer_idx, verbalizer in enumerate(verbalizers):
                 # Get the ID associated with the verbalizer using the tokenizer
-                verbalizer_id = get_verbalization_ids(verbalizer, self.wrapper.tokenizer, force_single_token=True)
+                verbalizer_id = get_verbalization_ids(
+                    verbalizer, self.wrapper.tokenizer, force_single_token=True)
 
                 # Ensure that the verbalization is not tokenized as unknown ("<UNK>")
                 assert verbalizer_id != self.wrapper.tokenizer.unk_token_id, "Verbalization was tokenized as <UNK>"
@@ -143,23 +148,29 @@ class PVP(ABC):
         parts_a, parts_b = self.get_parts(example)
 
         # Configure kwargs for tokenizer based on the tokenizer type
-        kwargs = {'add_prefix_space': True} if isinstance(tokenizer, GPT2Tokenizer) else {}
+        kwargs = {'add_prefix_space': True} if isinstance(
+            tokenizer, GPT2Tokenizer) else {}
 
         # Process and tokenize parts_a
         parts_a = [x if isinstance(x, tuple) else (x, False) for x in parts_a]
-        parts_a = [(tokenizer.encode(x, add_special_tokens=False, **kwargs), s) for x, s in parts_a if x]
+        parts_a = [(tokenizer.encode(x, add_special_tokens=False, **kwargs), s)
+                   for x, s in parts_a if x]
 
         # If parts_b exists, process and tokenize it
         if parts_b:
-            parts_b = [x if isinstance(x, tuple) else (x, False) for x in parts_b]
-            parts_b = [(tokenizer.encode(x, add_special_tokens=False, **kwargs), s) for x, s in parts_b if x]
+            parts_b = [x if isinstance(x, tuple) else (x, False)
+                       for x in parts_b]
+            parts_b = [(tokenizer.encode(x, add_special_tokens=False, **kwargs), s)
+                       for x, s in parts_b if x]
 
         # Truncate the tokenized parts to fit the maximum sequence length
-        self.truncate(parts_a, parts_b, max_length=self.wrapper.config.max_seq_length)
+        self.truncate(parts_a, parts_b,
+                      max_length=self.wrapper.config.max_seq_length)
 
         # Extract tokens from tokenized parts
         tokens_a = [token_id for part, _ in parts_a for token_id in part]
-        tokens_b = [token_id for part, _ in parts_b for token_id in part] if parts_b else None
+        tokens_b = [token_id for part,
+                    _ in parts_b for token_id in part] if parts_b else None
 
         # If priming is enabled
         if priming:
@@ -170,15 +181,19 @@ class PVP(ABC):
                 # Find and replace a mask token with the verbalizer ID
                 mask_idx = input_ids.index(self.mask_id)
                 assert mask_idx >= 0, 'sequence of input_ids must contain a mask token'
-                assert len(self.verbalize(example.label)) == 1, 'priming only supports one verbalization per label'
+                assert len(self.verbalize(
+                    example.label)) == 1, 'priming only supports one verbalization per label'
                 verbalizer = self.verbalize(example.label)[0]
-                verbalizer_id = get_verbalization_ids(verbalizer, self.wrapper.tokenizer, force_single_token=True)
+                verbalizer_id = get_verbalization_ids(
+                    verbalizer, self.wrapper.tokenizer, force_single_token=True)
                 input_ids[mask_idx] = verbalizer_id
             return input_ids, []
 
         # If priming is not enabled
-        input_ids = tokenizer.build_inputs_with_special_tokens(tokens_a, tokens_b)
-        token_type_ids = tokenizer.create_token_type_ids_from_sequences(tokens_a, tokens_b)
+        input_ids = tokenizer.build_inputs_with_special_tokens(
+            tokens_a, tokens_b)
+        token_type_ids = tokenizer.create_token_type_ids_from_sequences(
+            tokens_a, tokens_b)
 
         return input_ids, token_type_ids
 
@@ -188,13 +203,15 @@ class PVP(ABC):
 
     @staticmethod
     def _remove_last(parts: List[Tuple[str, bool]]):
-        last_idx = max(idx for idx, (seq, shortenable) in enumerate(parts) if shortenable and seq)
+        last_idx = max(idx for idx, (seq, shortenable)
+                       in enumerate(parts) if shortenable and seq)
         parts[last_idx] = (parts[last_idx][0][:-1], parts[last_idx][1])
 
     def truncate(self, parts_a: List[Tuple[str, bool]], parts_b: List[Tuple[str, bool]], max_length: int):
         """Truncate two sequences of text to a predefined total maximum length"""
         total_len = self._seq_length(parts_a) + self._seq_length(parts_b)
-        total_len += self.wrapper.tokenizer.num_special_tokens_to_add(bool(parts_b))
+        total_len += self.wrapper.tokenizer.num_special_tokens_to_add(
+            bool(parts_b))
         num_tokens_to_remove = total_len - max_length
 
         if num_tokens_to_remove <= 0:
@@ -246,10 +263,10 @@ class PVP(ABC):
         masked_logits = logits[mlm_labels >= 0]
 
         # Convert each masked MLM logit to a CLS logit using _convert_single_mlm_logits_to_cls_logits
-        cls_logits = torch.stack([self._convert_single_mlm_logits_to_cls_logits(ml) for ml in masked_logits])
+        cls_logits = torch.stack(
+            [self._convert_single_mlm_logits_to_cls_logits(ml) for ml in masked_logits])
 
         return cls_logits
-
 
     def _convert_single_mlm_logits_to_cls_logits(self, logits: torch.Tensor) -> torch.Tensor:
         """
@@ -263,7 +280,7 @@ class PVP(ABC):
 
         # Calculate the number of fillers for each label
         filler_len = torch.tensor([len(self.verbalize(label)) for label in self.wrapper.config.label_list],
-                                dtype=torch.float)
+                                  dtype=torch.float)
         filler_len = filler_len.to(logits.device)
 
         # Extract and prepare CLS logits using the mapping tensor
@@ -289,7 +306,8 @@ class PVP(ABC):
         logits = torch.squeeze(logits, 1)
 
         # Convert each permuted MLM logit to a CLS logit using _convert_single_mlm_logits_to_cls_logits
-        cls_logits = torch.stack([self._convert_single_mlm_logits_to_cls_logits(lgt) for lgt in logits])
+        cls_logits = torch.stack(
+            [self._convert_single_mlm_logits_to_cls_logits(lgt) for lgt in logits])
 
         return cls_logits
 
@@ -301,7 +319,8 @@ class PVP(ABC):
         :param path (str): The path to the file containing the verbalizer.
         :param pattern_id (int): The ID of the pattern to load.
         """
-        verbalizers = defaultdict(dict)  # type: Dict[int, Dict[str, List[str]]]
+        verbalizers = defaultdict(
+            dict)  # type: Dict[int, Dict[str, List[str]]]
         current_pattern_id = None
 
         with open(path, 'r') as fh:
@@ -312,7 +331,8 @@ class PVP(ABC):
                     label, *realizations = line.split()
                     verbalizers[current_pattern_id][label] = realizations
 
-        logger.info("Automatically loaded the following verbalizer: \n {}".format(verbalizers[pattern_id]))
+        logger.info("Automatically loaded the following verbalizer: \n {}".format(
+            verbalizers[pattern_id]))
 
         def verbalize(label) -> List[str]:
             return verbalizers[pattern_id][label]
@@ -346,7 +366,8 @@ class AgnewsPVP(PVP):
         elif self.pattern_id == 5:
             return [self.mask, '-', text_a, text_b], []
         else:
-            raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
+            raise ValueError(
+                "No pattern implemented for id {}".format(self.pattern_id))
 
     def verbalize(self, label) -> List[str]:
         return AgnewsPVP.VERBALIZER[label]
@@ -359,20 +380,20 @@ class ArEnSAPVP(PVP):
         "neutral": ["Maybe"],
     }
     ARABICVERBALIZER = {
-        "positive": ["ايجابي","جيد"],
-        "negative": ["سلبي","سيء"],
-        "neutral": ["ربما","محايد","متوسط"],
+        "positive": ["ايجابي", "جيد"],
+        "negative": ["سلبي", "سيء"],
+        "neutral": ["ربما", "محايد", "متوسط"],
     }
-    
+
     # ARABICVERBALIZER = {
     #     "positive": ["جيد"],
     #     "negative": ["سيء"],
     #     "neutral": ["ربما"],
     # }
-           
+
     def get_parts(self, example: InputExample) -> FilledPattern:
         text_a = self.shortenable(example.text_a)
-        
+
         if self.pattern_id == 0:
             return [text_a, ': ', self.mask], []
         elif self.pattern_id == 1:
@@ -382,21 +403,23 @@ class ArEnSAPVP(PVP):
         elif self.pattern_id == 3:
             return [text_a, ' [', self.mask, ']'], []
         else:
-            raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
-        
+            raise ValueError(
+                "No pattern implemented for id {}".format(self.pattern_id))
+
     def verbalize(self, label) -> List[str]:
         return ArEnSAPVP.ARABICVERBALIZER[label]
+
 
 class ANERcorpPVP(PVP):
 
     ARABICVERBALIZER = {
-    'LOC': ['مكان', 'منطقة','موقع'],
-    'ORG': ['مؤسسة','منظمة','شركة','هيئة'],
-    'PERS': ['شخص','رجل','إنسان'],
-    'O': ['آخر','غير'],
-    'MISC': ['متنوع'],
+        'LOC': ['مكان', 'منطقة', 'موقع'],
+        'ORG': ['مؤسسة', 'منظمة', 'شركة', 'هيئة'],
+        'PERS': ['شخص', 'رجل', 'إنسان'],
+        'O': ['آخر', 'غير'],
+        'MISC': ['متنوع'],
     }
-    
+
     # ARABICVERBALIZER = {
     # 'LOC': ['موقع'],
     # 'ORG': ['كيان'],
@@ -404,54 +427,103 @@ class ANERcorpPVP(PVP):
     # 'O': ['آخر'],
     # 'MISC': ['متنوع'],
     # }
-    
+
     ENGLISHVERBALIZER = {
-    'LOC': ['Location'],
-    'ORG': ['Company'],
-    'PERS': ['Person'],
-    'O': ['Other'],
-    'MISC': ['Various'],
+        'LOC': ['Location'],
+        'ORG': ['Company'],
+        'PERS': ['Person'],
+        'O': ['Other'],
+        'MISC': ['Various'],
     }
-    
-        
+
     def get_parts(self, example: InputExample) -> FilledPattern:
         text_a = example.text_b
-  
+
         if self.pattern_id == 0:
             return [self.mask, ' (', text_a, ')'], []
         elif self.pattern_id == 1:
             return [self.mask, ' [', text_a, ']'], []
         elif self.pattern_id == 2:
-            return [text_a,', ',self.mask], []
+            return [text_a, ', ', self.mask], []
         elif self.pattern_id == 3:
-            return [text_a,'. ',self.mask], []
-        
+            return [text_a, '. ', self.mask], []
+
         else:
-            raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
-        
-        
+            raise ValueError(
+                "No pattern implemented for id {}".format(self.pattern_id))
+
     def verbalize(self, label) -> List[str]:
         return ANERcorpPVP.ARABICVERBALIZER[label]
 
+
+class ArEnNERPVP(PVP):
+
+    ARABICVERBALIZERBIG= {
+        'LOC': ['مكان', 'منطقة', 'موقع'],
+        'ORG': ['مؤسسة', 'منظمة', 'شركة', 'هيئة'],
+        'PERS': ['شخص', 'رجل', 'إنسان'],
+        'O': ['آخر', 'غير'],
+        'MISC': ['متنوع'],
+    }
+
+    ARABICVERBALIZERSMALL = {
+    'LOC': ['موقع'],
+    'ORG': ['كيان'],
+    'PERS': ['شخص'],
+    'O': ['آخر'],
+    'MISC': ['متنوع'],
+    }
+
+    ENGLISHVERBALIZER = {
+        'LOC': ['Location'],
+        'ORG': ['Company'],
+        'PERS': ['Person'],
+        'O': ['Other'],
+        'MISC': ['Various'],
+    }
+
+    def get_parts(self, example: InputExample) -> FilledPattern:
+        text_a = example.text_a
+
+        if self.pattern_id == 0:
+            return [text_a, self.mask],[]
+
+        # if self.pattern_id == 0:
+        #     return [self.mask, ' (', text_a, ')'], []
+        # elif self.pattern_id == 1:
+        #     return [self.mask, ' [', text_a, ']'], []
+        # elif self.pattern_id == 2:
+        #     return [text_a,', ',self.mask], []
+        # elif self.pattern_id == 3:
+        #     return [text_a,'. ',self.mask], []
+
+        else:
+            raise ValueError(
+                "No pattern implemented for id {}".format(self.pattern_id))
+
+    def verbalize(self, label) -> List[str]:
+        return ArEnNERPVP.ENGLISHVERBALIZER[label]
+
+
 class MyArSAPVP(PVP):
     ARABICVERBALIZER = {
-        "pos": ["ايجابي","جيد"],
-        "neg": ["سلبي","سيء"],
+        "pos": ["ايجابي", "جيد"],
+        "neg": ["سلبي", "سيء"],
     }
-    
+
     # ARABICVERBALIZER = {
     #     "pos": ["جيد"],
     #     "neg": ["سيء"],
     # }
-    
+
     ENGLISHVERBALIZER = {
         "pos": ["Good"],
         "neg": ["Bad"],
     }
-     
+
     def get_parts(self, example: InputExample) -> FilledPattern:
         text_a = self.shortenable(example.text_a)
-                        
+
         if self.pattern_id == 0:
             return [text_a, '. ', self.mask], []
         elif self.pattern_id == 1:
@@ -461,11 +533,13 @@ class MyArSAPVP(PVP):
         elif self.pattern_id == 3:
             return [text_a, self.mask], []
         else:
-            raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
-        
+            raise ValueError(
+                "No pattern implemented for id {}".format(self.pattern_id))
+
     def verbalize(self, label) -> List[str]:
         return MyArSAPVP.ARABICVERBALIZER[label]
-    
+
+
 class YahooPVP(PVP):
     VERBALIZER = {
         "1": ["Society"],
@@ -498,7 +572,8 @@ class YahooPVP(PVP):
         elif self.pattern_id == 5:
             return [self.mask, '-', text_a, text_b], []
         else:
-            raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
+            raise ValueError(
+                "No pattern implemented for id {}".format(self.pattern_id))
 
     def verbalize(self, label) -> List[str]:
         return YahooPVP.VERBALIZER[label]
@@ -549,7 +624,8 @@ class YelpPolarityPVP(PVP):
         elif self.pattern_id == 3:
             return [text], ['In summary, the restaurant is', self.mask, '.']
         else:
-            raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
+            raise ValueError(
+                "No pattern implemented for id {}".format(self.pattern_id))
 
     def verbalize(self, label) -> List[str]:
         return YelpPolarityPVP.VERBALIZER[label]
@@ -643,14 +719,17 @@ class CopaPVP(PVP):
     def get_parts(self, example: InputExample) -> FilledPattern:
 
         premise = self.remove_final_punc(self.shortenable(example.text_a))
-        choice1 = self.remove_final_punc(self.lowercase_first(example.meta['choice1']))
-        choice2 = self.remove_final_punc(self.lowercase_first(example.meta['choice2']))
+        choice1 = self.remove_final_punc(
+            self.lowercase_first(example.meta['choice1']))
+        choice2 = self.remove_final_punc(
+            self.lowercase_first(example.meta['choice2']))
 
         question = example.meta['question']
         assert question in ['cause', 'effect']
 
         example.meta['choice1'], example.meta['choice2'] = choice1, choice2
-        num_masks = max(len(get_verbalization_ids(c, self.wrapper.tokenizer, False)) for c in [choice1, choice2])
+        num_masks = max(len(get_verbalization_ids(
+            c, self.wrapper.tokenizer, False)) for c in [choice1, choice2])
 
         if question == 'cause':
             if self.pattern_id == 0:
@@ -680,7 +759,8 @@ class WscPVP(PVP):
         text_a = self.shortenable(text_a)
 
         num_pad = self.rng.randint(0, 3) if 'train' in example.guid else 1
-        num_masks = len(get_verbalization_ids(target, self.wrapper.tokenizer, force_single_token=False)) + num_pad
+        num_masks = len(get_verbalization_ids(
+            target, self.wrapper.tokenizer, force_single_token=False)) + num_pad
         masks = self.mask * num_masks
 
         if self.pattern_id == 0:
@@ -689,7 +769,8 @@ class WscPVP(PVP):
             return [text_a, "In the previous sentence, the pronoun '*" + pronoun + "*' refers to", masks + '.'], []
         elif self.pattern_id == 2:
             return [text_a,
-                    "Question: In the passage above, what does the pronoun '*" + pronoun + "*' refer to? Answer: ",
+                    "Question: In the passage above, what does the pronoun '*" +
+                    pronoun + "*' refer to? Answer: ",
                     masks + '.'], []
 
     def verbalize(self, label) -> List[str]:
@@ -786,9 +867,12 @@ class RecordPVP(PVP):
         premise = self.shortenable(example.text_a)
         choices = example.meta['candidates']
 
-        assert '@placeholder' in example.text_b, f'question "{example.text_b}" does not contain a @placeholder token'
-        num_masks = max(len(get_verbalization_ids(c, self.wrapper.tokenizer, False)) for c in choices)
-        question = example.text_b.replace('@placeholder', self.mask * num_masks)
+        assert '@placeholder' in example.text_b, f'question "{
+            example.text_b}" does not contain a @placeholder token'
+        num_masks = max(len(get_verbalization_ids(
+            c, self.wrapper.tokenizer, False)) for c in choices)
+        question = example.text_b.replace(
+            '@placeholder', self.mask * num_masks)
         return [premise, question], []
 
     def verbalize(self, label) -> List[str]:
@@ -816,5 +900,6 @@ PVPS = {
     'ax-g': RtePVP,
     'ar-en-sa': ArEnSAPVP,
     'ar-ner-corp': ANERcorpPVP,
+    'ar-en-ner': ArEnNERPVP,
     'my-ar-sa': MyArSAPVP,
 }
