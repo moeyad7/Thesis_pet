@@ -305,11 +305,12 @@ class ArEnNERProcessor(DataProcessor):
         with open(path, encoding='utf8') as f:
             reader = csv.reader(f, delimiter=',')
             for idx, row in enumerate(reader):
-                label, word = row
+                label, word, body = row
                 guid = "%s-%s" % (set_type, idx)
-                text_a = word.replace('\\n', ' ').replace('\\', ' ')
+                text_a = body.replace('\\n', ' ').replace('\\', ' ')
+                text_b = word.replace('\\n', ' ').replace('\\', ' ')
 
-                example = InputExample(guid=guid, text_a=text_a, label=label)
+                example = InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label)
                 examples.append(example)
 
         return examples

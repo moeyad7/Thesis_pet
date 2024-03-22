@@ -490,7 +490,7 @@ class ArEnNERPVP(PVP):
     }
 
     def get_parts(self, example: InputExample) -> FilledPattern:
-        text_a = example.text_a
+        text_a = example.text_b
 
         if self.pattern_id == 0:
             return [text_a, self.mask], []
