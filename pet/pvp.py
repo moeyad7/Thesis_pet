@@ -509,7 +509,7 @@ class ArEnNERPVP(PVP):
                 "No pattern implemented for id {}".format(self.pattern_id))
 
     def verbalize(self, label) -> List[str]:
-        return ArEnNERPVP.ARABICVERBALIZERSMALL[label]
+        return ArEnNERPVP.ENGLISHVERBALIZER[label]
 
 
 class MyArSAPVP(PVP):

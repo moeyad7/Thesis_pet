@@ -103,7 +103,8 @@ done
 
 
 # Create the header for the CSV file
-header="f1-p,precision-p,recall-p,acc-p,f1-all,precision-all,recall-all,acc-all,final-f1,final-precision,final-recall,final-acc"
+# header="f1-p,precision-p,recall-p,acc-p,f1-all,precision-all,recall-all,acc-all,final-f1,final-precision,final-recall,final-acc"
+header="final-f1,final-precision,final-recall,final-acc"
 
 # Create the CSV file with the specified format
 if [ ! -f "$output_csv" ]; then
@@ -111,6 +112,7 @@ if [ ! -f "$output_csv" ]; then
   echo "$header" > "$output_csv"
 fi
 
-echo "\"${combined_f1[@]}\",\"${combined_precision[@]}\",\"${combined_recall[@]}\",\"${combined_acc[@]}\",\"${combined_metrics["f1-all"]}\",\"${combined_metrics["precision-all"]}\",\"${combined_metrics["recall-all"]}\",\"${combined_metrics["acc-all"]}\",\"${combined_metrics["final-f1"]}\",\"${combined_metrics["final-precision"]}\",\"${combined_metrics["final-recall"]}\",\"${combined_metrics["final-acc"]}\"" >> "$output_csv"
+# echo "\"${combined_f1[@]}\",\"${combined_precision[@]}\",\"${combined_recall[@]}\",\"${combined_acc[@]}\",\"${combined_metrics["f1-all"]}\",\"${combined_metrics["precision-all"]}\",\"${combined_metrics["recall-all"]}\",\"${combined_metrics["acc-all"]}\",\"${combined_metrics["final-f1"]}\",\"${combined_metrics["final-precision"]}\",\"${combined_metrics["final-recall"]}\",\"${combined_metrics["final-acc"]}\"" >> "$output_csv"
+echo "\"${combined_metrics["final-f1"]}\",\"${combined_metrics["final-precision"]}\",\"${combined_metrics["final-recall"]}\",\"${combined_metrics["final-acc"]}\"" >> "$output_csv"
 
 echo "Results saved to $output_csv"
