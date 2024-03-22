@@ -868,22 +868,22 @@ class WicPVP(PVP):
         return WicPVP.VERBALIZER_A[label]
 
 
-class RecordPVP(PVP):
+# class RecordPVP(PVP):
 
-    def get_parts(self, example: InputExample) -> FilledPattern:
-        premise = self.shortenable(example.text_a)
-        choices = example.meta['candidates']
+#     def get_parts(self, example: InputExample) -> FilledPattern:
+#         premise = self.shortenable(example.text_a)
+#         choices = example.meta['candidates']
 
-        assert '@placeholder' in example.text_b, f'question "{
-            example.text_b}" does not contain a @placeholder token'
-        num_masks = max(len(get_verbalization_ids(
-            c, self.wrapper.tokenizer, False)) for c in choices)
-        question = example.text_b.replace(
-            '@placeholder', self.mask * num_masks)
-        return [premise, question], []
+#         assert '@placeholder' in example.text_b, f'question "{
+#             example.text_b}" does not contain a @placeholder token'
+#         num_masks = max(len(get_verbalization_ids(
+#             c, self.wrapper.tokenizer, False)) for c in choices)
+#         question = example.text_b.replace(
+#             '@placeholder', self.mask * num_masks)
+#         return [premise, question], []
 
-    def verbalize(self, label) -> List[str]:
-        return []
+#     def verbalize(self, label) -> List[str]:
+#         return []
 
 
 PVPS = {
