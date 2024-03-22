@@ -419,14 +419,14 @@ class ANERcorpPVP(PVP):
         'O': ['آخر', 'غير'],
         'MISC': ['متنوع'],
     }
-    
+
     # ZEROARABICVERBALIZER = {
     # 'LOC': ['مكان', 'منطقة','موقع'],
     # 'ORG': ['مؤسسة','منظمة','شركة','هيئة'],
     # 'PERS': ['شخص','رجل','إنسان'],
     # 'O': ['آخر','غير'],
     # }
-    
+
     # ARABICVERBALIZER = {
     # 'LOC': ['موقع'],
     # 'ORG': ['كيان'],
@@ -465,7 +465,7 @@ class ANERcorpPVP(PVP):
 
 class ArEnNERPVP(PVP):
 
-    ARABICVERBALIZERBIG= {
+    ARABICVERBALIZERBIG = {
         'LOC': ['مكان', 'منطقة', 'موقع'],
         'ORG': ['مؤسسة', 'منظمة', 'شركة', 'هيئة'],
         'PERS': ['شخص', 'رجل', 'إنسان'],
@@ -474,11 +474,11 @@ class ArEnNERPVP(PVP):
     }
 
     ARABICVERBALIZERSMALL = {
-    'LOC': ['موقع'],
-    'ORG': ['كيان'],
-    'PERS': ['شخص'],
-    'O': ['آخر'],
-    'MISC': ['متنوع'],
+        'LOC': ['موقع'],
+        'ORG': ['كيان'],
+        'PERS': ['شخص'],
+        'O': ['آخر'],
+        'MISC': ['متنوع'],
     }
 
     ENGLISHVERBALIZER = {
@@ -493,7 +493,7 @@ class ArEnNERPVP(PVP):
         text_a = example.text_a
 
         if self.pattern_id == 0:
-            return [text_a, self.mask],[]
+            return [text_a, self.mask], []
 
         # if self.pattern_id == 0:
         #     return [self.mask, ' (', text_a, ')'], []
