@@ -318,9 +318,10 @@ class TransformerModelWrapper:
         train_iterator = trange(int(num_train_epochs), desc="Epoch")
         # Number of training epochs
         for _ in train_iterator:
-            epoch_iterator = tqdm(train_dataloader, desc="Iteration")
+            # epoch_iterator = tqdm(train_dataloader, desc="Iteration")
             # Number of batches in one epoch
-            for _, batch in enumerate(epoch_iterator):
+            # for _, batch in enumerate(epoch_iterator):
+            for _, batch in enumerate(train_iterator):
                 self.model.train()
                 unlabeled_batch = None
                 # move batch to device
