@@ -466,6 +466,14 @@ class ANERcorpPVP(PVP):
 class ArEnNERPVP(PVP):
 
     ARABICVERBALIZERBIG = {
+        'LOC': ['مكان', 'موقع'],
+        'ORG': ['مؤسسة', 'منظمة', 'شركة', 'هيئة'],
+        'PERS': ['شخص', 'رجل', 'إنسان'],
+        'O': ['آخر', 'غير'],
+        'MISC': ['متنوع'],
+    }
+    
+    ARABICVERBALIZERBIGOLD = {
         'LOC': ['مكان', 'منطقة', 'موقع'],
         'ORG': ['مؤسسة', 'منظمة', 'شركة', 'هيئة'],
         'PERS': ['شخص', 'رجل', 'إنسان'],
