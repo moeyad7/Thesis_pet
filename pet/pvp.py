@@ -505,7 +505,7 @@ class ArEnNERPVP(PVP):
         elif self.pattern_id == 1:
             return [self.mask,'الجملة السابقة؟',text_a],[]
         elif self.pattern_id == 2:
-            return [text_a,self.mask,'الجملة الاتية؟'][]
+            return [text_a,self.mask,'الجملة الاتية؟'],[]
             
             
             
