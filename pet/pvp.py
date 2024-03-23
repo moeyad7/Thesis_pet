@@ -501,8 +501,14 @@ class ArEnNERPVP(PVP):
         text_a = example.text_b
 
         if self.pattern_id == 0:
-            return [text_a, self.mask], []
-
+            return [self.mask,text_a], []
+        elif self.pattern_id == 1:
+            return [self.mask,'الجملة السابقة؟',text_a],[]
+        elif self.pattern_id == 2:
+            return [text_a,self.mask,'الجملة الاتية؟'][]
+            
+            
+            
         # if self.pattern_id == 0:
         #     return [self.mask, ' (', text_a, ')'], []
         # elif self.pattern_id == 1:
