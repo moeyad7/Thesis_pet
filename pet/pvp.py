@@ -501,17 +501,18 @@ class ArEnNERPVP(PVP):
         text_a = example.text_b
 
         if self.pattern_id == 0:
-            return [text_a,': ',self.mask], []
+            return [self.mask,': ',text_a], []
         elif self.pattern_id == 1:
-            return [text_a,'. ',self.mask], []
+            return [self.mask,'. ',text_a], []
         elif self.pattern_id == 2:
-            return [text_a,', ',self.mask], []
+            return [self.mask,', ',text_a], []
         elif self.pattern_id == 3:
-            return [text_a,'? ',self.mask], []
+            return [self.mask,'? ',text_a], []
         elif self.pattern_id == 4:
-            return [text_a,' (',self.mask,')'], []
+            return [self.mask,' (',text_a,')'], []
         elif self.pattern_id == 5:
-            return [text_a,' [',self.mask,']'], []
+            return [self.mask,' [',text_a,']'], []
+
             
             
             
